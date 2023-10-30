@@ -9,6 +9,7 @@ void AInLevelGameMode::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	/*
 	for (int i = 0; i < WinConditions.Num(); ++i)
 	{
 		if (WinConditions[i].CheckCondition())
@@ -17,6 +18,7 @@ void AInLevelGameMode::Tick(float DeltaTime)
 			return;
 		}
 	}
+	//*/
 }
 
 
@@ -51,10 +53,12 @@ void AInLevelGameMode::PostLogin(APlayerController* NewPlayer)
 }
 
 
+/*
 void AInLevelGameMode::SetWinConditions(TArray<WinCondition> Conditions)
 {
 	WinConditions = Conditions;
 }
+//*/
 
 
 void AInLevelGameMode::FindPlayer(int SeekerId, int HiderId)
