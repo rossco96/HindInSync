@@ -2,7 +2,7 @@
 
 
 #include "HISHUD.h"
-//#include "GameFramework/PlayerController.h"
+#include "GameFramework/PlayerController.h"							// not sure when this is used, but is included in the course!
 #include "CharacterOverlay.h"
 
 void AHISHUD::BeginPlay()

@@ -23,9 +23,23 @@ public:
 	FVector GetCurrentLocation();
 	FRotator GetCurrentRotation();
 
-	void FreezePlayer();
+	void SetPlayerControl(bool IgnoreInput);
+	void FreezePlayerControl();										// delete
+	void ResumePlayerControl();										// delete
+
+	UFUNCTION(Client, Reliable)										// Assume we need reliable, even if only update once every second?
+	void ClientRPCUpdateHUDTimer(float ElapsedSeconds);				// Need this here since server cannot access player HUDs?
+
+	virtual void BeginPlay() override;								// [TODO][DELETE] Testing only!
 
 private:
 	UPROPERTY(VisibleAnywhere)										// [TODO][DELETE] Testing only!
 	int PlayerId;
+
+	/*
+	UFUNCTION(Server, Reliable)
+	void ServerFreezePlayerControl();
+	UFUNCTION(Server, Reliable)
+	void ServerResumePlayerControl();
+	//*/
 };

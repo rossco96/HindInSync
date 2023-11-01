@@ -13,5 +13,10 @@ UCLASS()
 class HIDEINSYNC_API UCharacterOverlay : public UUserWidget
 {
 	GENERATED_BODY()
-	
+public:
+	void UpdateTimer(float ElapsedSeconds);
+
+private:
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* GameTimer;
 };

@@ -3,6 +3,18 @@
 
 #include "HISPlayerController.h"
 #include "GameFramework/Character.h"
+#include "HideInSync/HUD/HISHUD.h"
+
+
+// vvv Testing only! vvv
+void AHISPlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+
+	bool MoveInputIgnored = IsMoveInputIgnored();
+	FString IgnoredString = MoveInputIgnored ? TEXT("inputignored") : TEXT("NOTignored");
+	UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::SetPlayerControl] %s"), *IgnoredString);
+}
 
 
 #pragma region GETs
@@ -69,11 +81,91 @@ void AHISPlayerController::SetStartLocation(FVector Position, FRotator Rotation)
 #pragma endregion
 
 
-void AHISPlayerController::FreezePlayer()
+#pragma region Player Control
+void AHISPlayerController::SetPlayerControl(bool IgnoreInput)
 {
-	UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::FreezePlayer] xxxxx"));
+	bool MoveInputIgnoredBEF = IsMoveInputIgnored();
+	FString IgnoredStringBEF = MoveInputIgnoredBEF ? TEXT("inputignored") : TEXT("NOTignored");
+	UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::SetPlayerControl] bef - %s"), *IgnoredStringBEF);
 	//DisableInput(this);							// [TODO] THIS DOES NOT LOOK CORRECT? Should we be calling this from HISGameMode itself?
+
+	SetIgnoreMoveInput(IgnoreInput);				// ... Or is this the right way of going about it?
+	SetIgnoreLookInput(IgnoreInput);
+
+	bool MoveInputIgnoredAFT = IsMoveInputIgnored();
+	FString IgnoredStringAFT = MoveInputIgnoredAFT ? TEXT("inputignored") : TEXT("NOTignored");
+	UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::SetPlayerControl] aft - %s"), *IgnoredStringAFT);
+}
+
+
+void AHISPlayerController::FreezePlayerControl()
+{
+	//if (HasAuthority())
+	{
+		UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::FreezePlayerControl] xxxxx"));
+		//DisableInput(this);							// [TODO] THIS DOES NOT LOOK CORRECT? Should we be calling this from HISGameMode itself?
 	
+		SetIgnoreLookInput(true);						// ... Or is this the right way of going about it?
+		SetIgnoreMoveInput(true);
+	}
+	//else
+	//{
+	//	ServerFreezePlayerControl();
+	//}
+}
+
+void AHISPlayerController::ResumePlayerControl()
+{
+	//if (HasAuthority())
+	{
+		UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::ResumePlayerControl] ooooo"));
+		SetIgnoreLookInput(false);
+		SetIgnoreMoveInput(false);
+	}
+	//else
+	//{
+	//	ServerResumePlayerControl();
+	//}
+}
+#pragma endregion
+
+
+void AHISPlayerController::ClientRPCUpdateHUDTimer_Implementation(float ElapsedSeconds)
+{
+	AHISHUD* HISHUD = Cast<AHISHUD>(GetHUD());						// [TODO][IMPORTANT] Should store this at the very start! Do not call Cast on Tick!
+	if (HISHUD)
+	{
+		HISHUD->CharacterOverlay->UpdateTimer(ElapsedSeconds);
+	}
+	else
+	{
+		UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::UpdateTimer] HISHUD == nullptr ... major issue! (break)"));
+	}
+}
+
+
+
+
+
+// DO NOT NEED THE BELOW, BY THE LOOKS OF IT
+// ... Try somethinng else
+
+/*
+#pragma region SERVER
+void AHISPlayerController::ServerFreezePlayerControl_Implementation()
+{
+	UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::SERVER_FreezePlayerControl] xxxxxserver"));
+	//DisableInput(this);							// [TODO] THIS DOES NOT LOOK CORRECT? Should we be calling this from HISGameMode itself?
+
 	SetIgnoreLookInput(true);						// ... Or is this the right way of going about it?
 	SetIgnoreMoveInput(true);
 }
+
+void AHISPlayerController::ServerResumePlayerControl_Implementation()
+{
+	UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::SERVER_ResumePlayerControl] oooooserver"));
+	SetIgnoreLookInput(false);
+	SetIgnoreMoveInput(false);
+}
+#pragma endregion
+//*/
