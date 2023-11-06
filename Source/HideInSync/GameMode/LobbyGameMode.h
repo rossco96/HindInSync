@@ -17,4 +17,14 @@ class HIDEINSYNC_API ALobbyGameMode : public AGameMode
 public:
 	// PostLogin is the first place where it's safe to access the player that just joined the game
 	virtual void PostLogin(APlayerController* NewPlayer) override;
+	virtual void Logout(AController* Exiting) override;
+
+private:
+	class ALobbyPlayerController* HostController;
+
+	UFUNCTION(BlueprintCallable)
+	void StartGame();
+
+	UFUNCTION(BlueprintCallable)
+	void AddWidgetToOwningClient(class UWidget* Widget);
 };
