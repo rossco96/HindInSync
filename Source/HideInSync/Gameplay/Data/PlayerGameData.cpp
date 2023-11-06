@@ -7,10 +7,8 @@
 
 #pragma region Constructors & Init
 PlayerGameData::PlayerGameData(class AHISPlayerController* Controller)
-//PlayerGameData::PlayerGameData(int Id)
 {
 	HISPlayerController = Controller;
-	//PlayerId = Id;
 }
 
 PlayerGameData::~PlayerGameData()

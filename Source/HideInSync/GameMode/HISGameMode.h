@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameMode.h"
-//#include "HideInSync/Gameplay/WinConditions/WinCondition.h"
 #include "HideInSync/Gameplay/Data/PlayerGameData.h"
 #include "HISGameMode.generated.h"
 
@@ -24,7 +23,6 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
-	// [Q] Why do we NOT need CloneClass as protected? Or do we???
 
 	void StartWaitTimer(float Duration, FSimpleDelegate::TMethodPtr<AHISGameMode> OnComplete);
 	void StartWaitTimerWithInputEnabled(float Duration, FSimpleDelegate::TMethodPtr<AHISGameMode> OnComplete, class AHISPlayerController* HISController, bool InputEnabled);
@@ -54,6 +52,8 @@ private:
 	FTimerHandle RespawnDelayTimer;
 	FTimerHandle RespawnTimer;
 
+	bool bIsShowingCountdown = false;					// This isn't a great name for this bool (used when waiting - i.e. show the timer counting down rather than the game timer)
+	void UpdatePlayerCountdown();
 	bool bHasGameStarted = false;
 	void UpdatePlayerTimers();
 	
@@ -61,14 +61,18 @@ private:
 	const int TEST_NumberOfPlayers = 3;
 
 	// [TODO][IMPORTANT] 10.0f for testing only! Want 3.0f
-	const float WaitCountdown = 10.0f;					// Used for both game start, and respawning ... any others?
+	const float WaitCountdown = 5.0f;					// Used for both game start, and respawning ... any others?
 
 	const float HideTimeLimit = 15.0f;					// [TODO] DO NOT DO THIS! Want it customisable! DELETE!
 	const float RespawnDelay = 1.0f;					// [TODO] Delete this too - trigger a function at the end of the camera zoom out animation
 	const float RespawnTimeLimit = 3.0f;				// Also customisable?
 
-	void InitialCountdownFinished();
+	int CurrentWaitTime = 0;
+	int CurrentGameTime = 0;
+
+	void PreGameCountdownFinished();
 	void InitialHideTimerFinished();
+	void InitialSeekTimerFinished();
 
 	void HideClone(int PlayerId);
 

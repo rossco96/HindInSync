@@ -11,7 +11,6 @@ class HIDEINSYNC_API PlayerGameData
 {
 public:
 	PlayerGameData(class AHISPlayerController* Controller);
-	//PlayerGameData(int Id);
 	~PlayerGameData();
 
 	// [TODO] See note above function in .cpp
@@ -20,7 +19,6 @@ public:
 	FORCEINLINE AHISPlayerController* GetController() { return HISPlayerController; }
 
 	FORCEINLINE bool IsPlayerHidden() { return bIsHidden; }
-	//FORCEINLINE void SetPlayerHidden(bool bHidden) { bIsHidden = bHidden; }		// [TODO] Delete this method! Set 'bIsHidden = true' in SetHidePosition ... Figure out where to set it false!
 
 	FORCEINLINE FVector GetSpawnLocation() { return SpawnLocation; }
 	FORCEINLINE FRotator GetSpawnRotation() { return SpawnRotation; }
@@ -36,8 +34,9 @@ public:
 	void AddToFoundByPlayer(int Id);
 
 private:
-	//int PlayerId;
 	class AHISPlayerController* HISPlayerController;
+	
+	//bool bPlayerLoadedIn = false;						// Need this?
 	bool bSpawnPositionSet = false;
 	bool bIsHidden = false;
 

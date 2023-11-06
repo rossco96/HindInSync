@@ -57,7 +57,7 @@ public:
 	FORCEINLINE void SetPlayerId(int Id) { PlayerId = Id; }		// Ensure this is only used once, by the game mode, while setting up the level
 	FORCEINLINE int GetPlayerId() { return PlayerId; }
 
-	FORCEINLINE bool IsFound() { return bIsFound; }
+	FORCEINLINE bool IsFound() { return bIsFound; }				// We using this?
 
 	void ShowFoundWidget(bool bShowWidget);// { if (FoundWidget) { FoundWidget->SetVisibility(bShowWidget); } }
 	

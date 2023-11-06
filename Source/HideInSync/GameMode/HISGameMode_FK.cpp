@@ -4,6 +4,7 @@
 #include "HISGameMode_FK.h"
 #include "HideInSync/Character/HISClone.h"
 #include "HideInSync/PlayerController/HISPlayerController.h"
+#include "HideInSync/Character/HISCharacter.h"
 
 // GameMode_FK = Finders Keepers
 //	o Player with the most finds at the end of the time limit wins
@@ -17,19 +18,28 @@ void AHISGameMode_FK::PlayerFound(class AHISClone* FoundClone, /*class AHISPlaye
 	
 	if (FoundClone)
 	{
+		// [TODO] See bullet points...
+		
+		//	o Play FOUND animation and sound for clone (and disappear)		--> Put this inside "FoundReset"
+		//	o Destroy the clone
+		// IMPORTANT! Need to check HasAuthority() then either call FoundReset or ClientFoundReset <<< is that correct? client? in general??
 		FoundClone->FoundReset();
 
-		int FoundPlayerId = FoundClone->GetPlayerId();
+		//	o Freeze found player's seeker (disable input)
+		int FoundPlayerId = FoundClone->GetPlayerId();						// Do it like this? Or should I be passing HiderController to this function?
 		AHISPlayerController* FoundPlayerController = PlayersData[FoundPlayerId].GetController();
-		FoundPlayerController->FreezePlayer();
-
-		// [TODO]
-		//	o Play FOUND animation and sound for clone (and disappear)
-		//	o Freeze found seeker (disable input)
+		//FoundPlayerController->SetIgnorePlayerInput(true);				// No longer doing it like this -- DELETE
+		AHISCharacter* HISCharacter = Cast<AHISCharacter>(FoundPlayerController->GetPawn());
+		HISCharacter->bDisableInput = true;
+		
 		//	o Zoom out from seeker (move first person camera to third person)
-		//	o Play FOUND animation and sound for seeker (and disappear)
+		
+		//	o Play FOUND animation and sound for seeker (and disappear, and destroy)
+		
 		//	o Respawn (after a few seconds?) the found player as a hider
+		//RequestRespawn(FoundPlayerId);									// Commented out for now, to test client SetIgnorePlayerInput
 	}
+
 
 	// [TODO][Important]
 	// Need to find a way of "Finding" the linked active player as well...

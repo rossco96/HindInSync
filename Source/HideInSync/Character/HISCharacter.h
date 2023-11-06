@@ -16,6 +16,9 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	UPROPERTY(Replicated)
+	bool bDisableInput = false;
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -23,6 +26,8 @@ protected:
 	void MoveRight(float Value);
 	void Turn(float Value);
 	void LookUp(float Value);
+
+	void Jump();
 
 	UPROPERTY(Replicated)
 	int PlayerId;

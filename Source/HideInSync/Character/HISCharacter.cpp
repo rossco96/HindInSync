@@ -23,18 +23,21 @@ void AHISCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
-
 	PlayerInputComponent->BindAxis("MoveForward", this, &AHISCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AHISCharacter::MoveRight);
 	PlayerInputComponent->BindAxis("Turn", this, &AHISCharacter::Turn);
 	PlayerInputComponent->BindAxis("LookUp", this, &AHISCharacter::LookUp);
+
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AHISCharacter::Jump);
 }
 
 
 void AHISCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// Need disabled here in parent, after all!
+	bDisableInput = true;
 }
 
 
@@ -48,6 +51,7 @@ void AHISCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AHISCharacter, PlayerId);
+	DOREPLIFETIME(AHISCharacter, bDisableInput);
 }
 #pragma endregion
 
@@ -55,6 +59,7 @@ void AHISCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 #pragma region Input
 void AHISCharacter::MoveForward(float Value)
 {
+	if (bDisableInput) return;
 	if (Controller != nullptr && Value != 0.0f)
 	{
 		const FRotator YawRotation(0.0f, Controller->GetControlRotation().Yaw, 0.0f);
@@ -63,9 +68,9 @@ void AHISCharacter::MoveForward(float Value)
 	}
 }
 
-
 void AHISCharacter::MoveRight(float Value)
 {
+	if (bDisableInput) return;
 	if (Controller != nullptr && Value != 0.0f)
 	{
 		const FRotator YawRotation(0.0f, Controller->GetControlRotation().Yaw, 0.0f);
@@ -80,9 +85,15 @@ void AHISCharacter::Turn(float Value)
 	AddControllerYawInput(Value);
 }
 
-
 void AHISCharacter::LookUp(float Value)
 {
 	AddControllerPitchInput(Value);
+}
+
+
+void AHISCharacter::Jump()
+{
+	if (bDisableInput) return;
+	Super::Jump();
 }
 #pragma endregion

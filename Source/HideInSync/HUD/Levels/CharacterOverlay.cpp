@@ -4,11 +4,18 @@
 #include "CharacterOverlay.h"
 #include "Components/TextBlock.h"
 
-void UCharacterOverlay::UpdateTimer(int ElapsedSeconds)
+void UCharacterOverlay::UpdateTimer(int Seconds)
 {
-	int Minutes = ElapsedSeconds / 60;
-	int Seconds = ElapsedSeconds % 60;
-	//UE_LOG(LogActor, Warning, TEXT("[UCharacterOverlay::UpdateTimer] ElapsedSeconds / TotalSecondsInt / Minutes / Seconds --> %d / %d / %d / %d"), ElapsedSeconds, TotalSecondsInt, Minutes, Seconds);
-	FString TimeString = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds);
-	GameTimer->SetText(FText::FromString(TimeString));
+	if (GameTimer)
+	{
+		int MinutesDiv = Seconds / 60;
+		int SecondsMod = Seconds % 60;
+		//UE_LOG(LogActor, Warning, TEXT("[UCharacterOverlay::UpdateTimer] ElapsedSeconds / TotalSecondsInt / Minutes / Seconds --> %d / %d / %d / %d"), ElapsedSeconds, TotalSecondsInt, Minutes, Seconds);
+		FString TimeString = FString::Printf(TEXT("%02d:%02d"), MinutesDiv, SecondsMod);
+		GameTimer->SetText(FText::FromString(TimeString));
+	}
+	else
+	{
+		UE_LOG(LogActor, Warning, TEXT("[UCharacterOverlay::UpdateTimer] GameTimer == nullptr ???"));
+	}
 }

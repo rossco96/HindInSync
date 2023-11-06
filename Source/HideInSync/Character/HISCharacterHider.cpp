@@ -51,6 +51,12 @@ void AHISCharacterHider::BeginPlay()
 	{
 		// Does anything need doing in here? Previous things have since been refactored out!
 	}
+
+	// Disable input in here?
+	// Do we have a PlayerController assigned yet?
+	// Do we need to poll for it in Tick??
+
+	//bDisableInput = true;					// Need disabled in parent, after all
 }
 
 
@@ -156,6 +162,19 @@ void AHISCharacterHider::PossessedBy(AController* NewController)
 		return;
 	}
 
+	/*
+	if (HasAuthority())
+	{
+		UE_LOG(LogActor, Warning, TEXT("[AHISCharacterHider::PossessedBy] DisableInput - SERVER"));
+		ClientDisableInput(HISController);
+	}
+	else
+	{
+		UE_LOG(LogActor, Warning, TEXT("[AHISCharacterHider::PossessedBy] disable_input_client"));
+		ServerDisableInput(HISController);
+	}
+	//*/
+
 	AHISGameMode* HISGameMode = GetWorld()->GetAuthGameMode<AHISGameMode>();
 	if (HISGameMode)
 	{
@@ -187,5 +206,16 @@ void AHISCharacterHider::ServerHideButtonPressed_Implementation()
 	//HISGameMode->SetCloneHidingLocation(this, CloneLocation, CloneRotation);
 	AHISPlayerController* HISPlayerController = Cast<AHISPlayerController>(GetController());	// [TODO] Store this cast, if using often?
 	HISGameMode->SetCloneHidingLocation(HISPlayerController, CloneLocation, CloneRotation);
+}
+
+
+void AHISCharacterHider::ServerDisableInput_Implementation(AHISPlayerController* HISController)
+{
+	DisableInput(HISController);
+}
+
+void AHISCharacterHider::ClientDisableInput_Implementation(AHISPlayerController* HISController)
+{
+	DisableInput(HISController);
 }
 #pragma endregion

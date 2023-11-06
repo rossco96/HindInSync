@@ -31,7 +31,6 @@ void AHISCharacterSeeker::SetupPlayerInputComponent(UInputComponent* PlayerInput
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::SetupPlayerInputComponent]"));
 	PlayerInputComponent->BindAction("Find", IE_Pressed, this, &AHISCharacterSeeker::FindClone);
 }
 
@@ -39,6 +38,8 @@ void AHISCharacterSeeker::SetupPlayerInputComponent(UInputComponent* PlayerInput
 void AHISCharacterSeeker::BeginPlay()
 {
 	Super::BeginPlay();
+
+	//bDisableInput = true;				// Need disabled in parent, after all
 }
 
 
@@ -54,20 +55,20 @@ void AHISCharacterSeeker::FindClone()
 {
 	if (HasAuthority())
 	{
-		UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::FindClone] HAS AUTH (i.e. we are the server)"));
+		//UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::FindClone] HAS AUTH (i.e. we are the server)"));
 
-		UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::FindClone] A"));
+		//UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::FindClone] A"));
 		if (FoundClone == nullptr)
 		{
-			UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::FindClone] X"));
+		//	UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::FindClone] X"));
 			return;
 		}
 
-		UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::FindClone] B"));
+		//UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::FindClone] B"));
 		AHISGameMode* HISGameMode = GetWorld()->GetAuthGameMode<AHISGameMode>();
 		if (HISGameMode)
 		{
-			UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::FindClone] C"));
+		//	UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::FindClone] C"));
 			//int CloneId = FoundClone->GetPlayerId();
 			//AHISPlayerController* CloneHISController = FoundClone->GetHISPlayerController();
 			AHISPlayerController* HISController = Cast<AHISPlayerController>(Controller);
@@ -75,17 +76,17 @@ void AHISCharacterSeeker::FindClone()
 
 			if (HISController)
 			{
-				UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::FindClone] D"));
+		//		UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::FindClone] D"));
 				HISGameMode->PlayerFound(FoundClone, HISController);
 			}
 			else
 			{
-				UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::FindClone] Z"));
+		//		UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::FindClone] Z"));
 			}
 		}
 		else
 		{
-			UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::FindClone] Y"));
+		//	UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::FindClone] Y"));
 		}
 	}
 	else
@@ -107,12 +108,15 @@ void AHISCharacterSeeker::OnRep_FoundClone(AHISClone* LastClone)
 {
 	if (FoundClone != nullptr && FoundClone->GetPlayerId() == PlayerId) return;		// Is this the best way to do this?
 	
+	// DEBUG BELOW
+	/*
 	if (GetOwner() != nullptr && GetController() != nullptr)
 	{
 		FString OwnerString = GetOwner()->GetActorNameOrLabel();
 		FString ControllerString = GetController()->GetActorNameOrLabel();
 		UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::OnRep_FoundClone] OWNER = %s // CONTROLLER = %s"), *OwnerString, *ControllerString);
 	}
+	//*/
 	
 	if (FoundClone)
 	{
@@ -130,24 +134,26 @@ void AHISCharacterSeeker::SetFoundClone(AHISClone* Clone)
 	if (Clone != nullptr && Clone->GetPlayerId() == PlayerId) return;				// Is this the best way to do this?
 
 	// vvv vvv DEBUG vvv vvv
+	/*
 	if (GetOwner() != nullptr && GetController() != nullptr)
 	{
 		FString OwnerString = GetOwner()->GetActorNameOrLabel();
 		FString ControllerString = GetController()->GetActorNameOrLabel();
 		UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::SetFoundClone] OWNER = %s // CONTROLLER = %s"), *OwnerString, *ControllerString);
 	}
+	//*/
 	// ^^^ ^^^ DEBUG ^^^ ^^^
 
 	if (IsLocallyControlled() && FoundClone)
 	{
-		UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::SetFoundClone] IsLocallyControlled(1)"));
+		//UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::SetFoundClone] IsLocallyControlled(1)"));
 		FoundClone->ShowFoundWidget(false);
 	}
 
 	FoundClone = Clone;
 	if (IsLocallyControlled() && FoundClone)
 	{
-		UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::SetFoundClone] IsLocallyControlled(2)"));
+		//UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::SetFoundClone] IsLocallyControlled(2)"));
 		FoundClone->ShowFoundWidget(true);
 	}
 }
@@ -156,20 +162,16 @@ void AHISCharacterSeeker::SetFoundClone(AHISClone* Clone)
 #pragma region Server Functions
 void AHISCharacterSeeker::ServerFindButtonPressed_Implementation()
 {
-	UE_LOG(LogActor, Warning, TEXT("[AHISCharacterHider::ServerFindButtonPressed] (no auth)"));
-
-	UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::ServerHideButtonPressed_Implementation] A"));
+	// Is nullptr check needed?
 	if (FoundClone == nullptr)
 	{
 		UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::ServerHideButtonPressed_Implementation] X"));
 		return;
 	}
 
-	UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::ServerHideButtonPressed_Implementation] B"));
 	AHISGameMode* HISGameMode = GetWorld()->GetAuthGameMode<AHISGameMode>();
 	if (HISGameMode)
 	{
-		UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::ServerHideButtonPressed_Implementation] C"));
 		//int CloneId = FoundClone->GetPlayerId();
 		//AHISPlayerController* CloneHISController = FoundClone->GetHISPlayerController();
 		AHISPlayerController* HISController = Cast<AHISPlayerController>(Controller);
@@ -177,17 +179,8 @@ void AHISCharacterSeeker::ServerFindButtonPressed_Implementation()
 
 		if (HISController)
 		{
-			UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::ServerHideButtonPressed_Implementation] D"));
 			HISGameMode->PlayerFound(FoundClone, HISController);
 		}
-		else
-		{
-			UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::ServerHideButtonPressed_Implementation] Z"));
-		}
-	}
-	else
-	{
-		UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::ServerHideButtonPressed_Implementation] Y"));
 	}
 }
 #pragma endregion

@@ -26,15 +26,18 @@ void AHISGameMode::BeginPlay()
 		HideTimeLimit
 	);
 	//*/
-
-	//UE_LOG(LogActor, Warning, TEXT("[AHISGameMode::BeginPlay] ~Timer~"));
-	//StartWaitTimer(HideTimeLimit, AHISGameMode::HideTimerFinished);
 }
 
 
 void AHISGameMode::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+
+	if (bIsShowingCountdown)
+	{
+		UpdatePlayerCountdown();
+		return;
+	}
 
 	if (bHasGameStarted)
 	{
@@ -47,7 +50,7 @@ void AHISGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
 
-	UE_LOG(LogActor, Warning, TEXT("[AHISGameMode::PostLogin] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< (call to FreezePlayerControl)"));
+	UE_LOG(LogActor, Warning, TEXT("[AHISGameMode::PostLogin] <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< (call to SetIgnorePlayerInput(true))"));
 
 	int32 NumberOfPlayers = GameState.Get()->PlayerArray.Num();
 	
@@ -55,13 +58,14 @@ void AHISGameMode::PostLogin(APlayerController* NewPlayer)
 	int32 PlayerId = NumberOfPlayers - 1;
 	
 	AHISPlayerController* HISPlayerController = Cast<AHISPlayerController>(NewPlayer);
-	//HISPlayerController->FreezePlayerControl();											// THIS IS NOT WORKING? WHY???
+	//HISPlayerController->SetIgnorePlayerInput(true);											// THIS IS NOT WORKING? WHY???
 	HISPlayerController->SetPlayerId(PlayerId);
 	PlayerGameData Data = PlayerGameData(HISPlayerController);
 
 	AHISCharacterHider* HISHider = Cast<AHISCharacterHider>(HISPlayerController->GetCharacter());
 	if (HISHider)
 	{
+		//HISHider->bDisableInput = true;
 		Data.SetSpawnPosition(HISHider->GetLocation(), HISHider->GetRotation());
 	}
 	else
@@ -70,41 +74,23 @@ void AHISGameMode::PostLogin(APlayerController* NewPlayer)
 		UE_LOG(LogActor, Warning, TEXT("[AHISGameMode::PostLogin] HISHider == nullptr (presumably for server-client only?)"));
 	}
 
-	//HISCharacterClone Player = (HISCharacterClone)PlayerArray[PlayerId];					// [TODO] Should use pointer here, no?
-
-	// [TODO] want to assign this new player to PlayersData
-	// zero-based indexing please!
-	//PlayersData.Add(PlayerId, PlayerGameData(PlayerId));									// OLD WAY OF DOING THIS
 	PlayersData.Add(PlayerId, Data);
-
-	
-	// [TODO] want to start countdown once target reached
-	/*
-	if (PlayerId + 1 == TargetNumberOfPlayers)
-	{
-		// [TODO] Set HISCharacterClone PlayerId
-		// (and assigned PlayerStart..? Can we do that here???)
-		//
-		// [TODO] Call to initialise all player arrays
-		//
-		// [TODO] Move to HIDE gamestate, with countdown
-	}
-	//*/
-
 
 	if (NumberOfPlayers == TEST_NumberOfPlayers)
 	{
 		// [TEST] Below here, rather than above
+		// Don't do it in this script at all! Put inside AHISPlayerController::BeginPlay()
+		/*
 		for (int i = 0; i < NumberOfPlayers; ++i)
 		{
-			//PlayersData[i].GetController()->FreezePlayerControl();
-			PlayersData[i].GetController()->SetPlayerControl(true);
+			//PlayersData[i].GetController()->SetIgnorePlayerInput(true);
+			PlayersData[i].GetController()->ClientSetIgnorePlayerInput(true);				// Shouldn't need to call client version of this? Since within normal one, it calls ClientIgnoreMoveInput etc.
 		}
+		//*/
 
 		// START THE COUNTDOWN!
-		// ... Freeze controllers in here?
 		UE_LOG(LogActor, Warning, TEXT("[AHISGameMode::PostLogin] ~WaitTimer~"));
-		StartWaitTimer(WaitCountdown, &AHISGameMode::InitialCountdownFinished);
+		StartWaitTimer(WaitCountdown, &AHISGameMode::PreGameCountdownFinished);
 	}
 }
 #pragma endregion
@@ -113,6 +99,7 @@ void AHISGameMode::PostLogin(APlayerController* NewPlayer)
 #pragma region TIMERS
 void AHISGameMode::StartWaitTimer(float Duration, FSimpleDelegate::TMethodPtr<AHISGameMode> OnComplete)
 {
+	bIsShowingCountdown = true;														// WHY DOES THIS CRASH
 	UE_LOG(LogActor, Warning, TEXT("[AHISGameMode::StartWaitTimer] ~WaitTimer~"));
 	GetWorldTimerManager().SetTimer(WaitTimer, this, OnComplete, Duration);
 }
@@ -121,17 +108,14 @@ void AHISGameMode::StartWaitTimer(float Duration, FSimpleDelegate::TMethodPtr<AH
 void AHISGameMode::StartWaitTimerWithInputEnabled(float Duration, FSimpleDelegate::TMethodPtr<AHISGameMode> OnComplete, AHISPlayerController* HISController, bool InputEnabled)
 {
 	GetWorldTimerManager().SetTimer(WaitTimer, this, OnComplete, Duration);
-	//if (InputEnabled)	HISController->ResumePlayerControl();
-	//else				HISController->FreezePlayerControl();
-	if (InputEnabled)	HISController->SetPlayerControl(false);
-	else				HISController->SetPlayerControl(true);
+	//if (InputEnabled)	HISController->SetIgnorePlayerInput(false);			// Now doing this a different way!
+	//else				HISController->SetIgnorePlayerInput(true);
 }
 
 void AHISGameMode::StartGameTimer()
 {
 	//float MaxTime = std::numeric_limits<float>::max();
-	//float MaxTime = std::numeric_limits<float>::lowest();
-	float MaxTime = 9999999999.9f;											// [TODO] HACK (and ~317 years, for anyone interested)
+	float MaxTime = 9999999999.9f;											// [TODO] HACK (and ~317 years, for anyone interested) at the very least turn this into a const MAX_TIME
 	//UE_LOG(LogActor, Warning, TEXT("[AHISGameMode::StartGameTimer] GAME TIMER -- %d"), MaxTime);
 	GetWorldTimerManager().SetTimer(GameTimer, MaxTime, false);
 	bHasGameStarted = true;
@@ -140,15 +124,24 @@ void AHISGameMode::StartGameTimer()
 
 
 #pragma region (OnTimersComplete)
-void AHISGameMode::InitialCountdownFinished()
+void AHISGameMode::PreGameCountdownFinished()
 {
+	bIsShowingCountdown = false;
+	
 	UE_LOG(LogActor, Warning, TEXT("[AHISGameMode::InitialCountdownFinished] ~WaitTimer~ CALL TO RESUMEPLAYERCONTROL"));
 
 	// [TODO][Q] Instead of using PlayersData.Num() should be using (yet to be included) TotalPlayers?
+	/*
 	for (int i = 0; i < PlayersData.Num(); ++i)
 	{
-		//PlayersData[i].GetController()->ResumePlayerControl();
-		PlayersData[i].GetController()->SetPlayerControl(false);;
+		PlayersData[i].GetController()->SetIgnorePlayerInput(false);
+	}
+	//*/
+	// Above temp(?) commented out due to testing(?) disabling via HISCharacter:
+	for (int i = 0; i < PlayersData.Num(); ++i)
+	{
+		AHISCharacter* HISCharacter = Cast<AHISCharacter>(PlayersData[i].GetController()->GetPawn());
+		HISCharacter->bDisableInput = false;
 	}
 
 	StartWaitTimer(HideTimeLimit, &AHISGameMode::InitialHideTimerFinished);
@@ -163,7 +156,25 @@ void AHISGameMode::InitialHideTimerFinished()
 	// [TODO] Instead of using PlayersData.Num() should be using (yet to be included) TotalPlayers?
 	for (int i = 0; i < PlayersData.Num(); ++i)
 	{
+		// DISABLE INPUT
+		AHISCharacter* HISCharacter = Cast<AHISCharacter>(PlayersData[i].GetController()->GetPawn());
+		HISCharacter->bDisableInput = true;
 		HideClone(i);
+	}
+
+	//bIsShowingCountdown = true;													// Temp here, commented out from first line of StartWaitTimer()
+	StartWaitTimer(WaitCountdown, &AHISGameMode::InitialSeekTimerFinished);
+}
+
+void AHISGameMode::InitialSeekTimerFinished()
+{
+	bIsShowingCountdown = false;
+
+	for (int i = 0; i < PlayersData.Num(); ++i)
+	{
+		// ENABLE INPUT
+		AHISCharacter* HISCharacter = Cast<AHISCharacter>(PlayersData[i].GetController()->GetPawn());
+		HISCharacter->bDisableInput = false;
 	}
 
 	StartGameTimer();
@@ -329,6 +340,10 @@ void AHISGameMode::PlayerFound(class AHISClone* FoundClone, /*class AHISPlayerCo
 //void AHISGameMode::RequestRespawn(class AHISCharacter* CurrentCharacter, class AHISCharacter* NextCharacter, class AHISPlayerController* HISPlayerController)
 void AHISGameMode::RequestRespawn(int FoundPlayerId)
 {
+	//PlayersData[FoundPlayerId].SetPlayerFound();
+
+
+
 	// [TODO][IMPORTANT]
 	// 
 	// Should have played the dissolve animation by now
@@ -412,21 +427,37 @@ void AHISGameMode::RequestRespawn(int FoundPlayerId)
 #pragma endregion
 
 
+void AHISGameMode::UpdatePlayerCountdown()
+{
+	int SecondsRemaining = FMath::FloorToInt(GetWorldTimerManager().GetTimerRemaining(WaitTimer));
+	if (SecondsRemaining == CurrentWaitTime) return;
+
+	CurrentWaitTime = SecondsRemaining;
+	for (int i = 0; i < PlayersData.Num(); ++i)
+	{
+		AHISPlayerController* HISController = PlayersData[i].GetController();
+		if (HISController)
+		{
+			HISController->ClientUpdateHUDTimer(SecondsRemaining);
+		}
+		else
+		{
+			UE_LOG(LogActor, Warning, TEXT("[AHISGameMode::UpdatePlayerCountdown] HISController == nullptr <<< <<< <<< <<< <<<"));
+		}
+	}
+}
+
 void AHISGameMode::UpdatePlayerTimers()
 {
+	int ElapsedSeconds = FMath::FloorToInt(GetWorldTimerManager().GetTimerElapsed(GameTimer));
+	if (ElapsedSeconds == CurrentGameTime) return;
+
+	CurrentGameTime = ElapsedSeconds;
 	// [TODO][Q] Instead of using PlayersData.Num() should be using (yet to be included) TotalPlayers?
 	for (int i = 0; i < PlayersData.Num(); ++i)
 	{
-		float ElapsedSeconds = GetWorldTimerManager().GetTimerElapsed(GameTimer);
-		
-		// vvv DEBUG vvv
-		//FString DebugExists = (GetWorldTimerManager().TimerExists(GameTimer)) ? "Y" : "N";
-		//FString DebugActive = (GetWorldTimerManager().IsTimerActive(GameTimer)) ? "Y" : "N";
-		//UE_LOG(LogActor, Warning, TEXT("[UCharacterOverlay::UpdateTimer] Exists / Active / ElapsedSeconds --> %s / %s / %d"), *DebugExists, *DebugActive, ElapsedSeconds);
-		// ^^^ DEBUG ^^^
-		
 		AHISPlayerController* HISController = PlayersData[i].GetController();
 		// [Q] Need to null check the controller?
-		HISController->ClientRPCUpdateHUDTimer(ElapsedSeconds);
+		HISController->ClientUpdateHUDTimer(ElapsedSeconds);
 	}
 }

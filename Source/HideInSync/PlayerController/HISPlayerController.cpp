@@ -3,17 +3,21 @@
 
 #include "HISPlayerController.h"
 #include "GameFramework/Character.h"
-#include "HideInSync/HUD/HISHUD.h"
+#include "HideInSync/HUD/Levels/HISHUD.h"
 
 
-// vvv Testing only! vvv
+// vvv Testing only? Or actually need it now? vvv
 void AHISPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	bool MoveInputIgnored = IsMoveInputIgnored();
-	FString IgnoredString = MoveInputIgnored ? TEXT("inputignored") : TEXT("NOTignored");
-	UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::SetPlayerControl] %s"), *IgnoredString);
+	// DEBUG BELOW
+	FString IgnoredString = IsMoveInputIgnored() ? TEXT("inputignored") : TEXT("NOTignored");
+	UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::BeginPlay] %s"), *IgnoredString);
+	// DEBUG ABOVE
+
+	// Disable input on spawning in:
+	//SetIgnorePlayerInput(true);
 }
 
 
@@ -82,11 +86,109 @@ void AHISPlayerController::SetStartLocation(FVector Position, FRotator Rotation)
 
 
 #pragma region Player Control
-void AHISPlayerController::SetPlayerControl(bool IgnoreInput)
+void AHISPlayerController::SetIgnorePlayerInput(bool IgnoreInput)
 {
+	if (HasAuthority())
+	{
+		UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::SetIgnorePlayerControl] HasAuthority()"));
+	}
+	else
+	{
+		UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::SetIgnorePlayerControl] NO AUTH"));
+	}
+
+	ClientIgnoreMoveInput(IgnoreInput);
+	ClientIgnoreLookInput(IgnoreInput);
+
+	return;
+
+	// [TODO] Check HasAuthority? May need this as an RPC!
+	if (HasAuthority())
+	{
+		bool MoveInputIgnoredBEF = IsMoveInputIgnored();
+		FString IgnoredStringBEF = MoveInputIgnoredBEF ? TEXT("inputignored") : TEXT("NOTignored");
+		UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::SetIgnorePlayerControl][SERVER] bef - %s"), *IgnoredStringBEF);
+		//DisableInput(this);							// [TODO] THIS DOES NOT LOOK CORRECT? Should we be calling this from HISGameMode itself?
+
+		SetIgnoreMoveInput(IgnoreInput);				// ... Or is this the right way of going about it?
+		SetIgnoreLookInput(IgnoreInput);				// Do we want to be able to look around whilst still, or absolutely no movement?
+		//SetIgnorePlayerInput(IgnoreInput);			// [TODO] Test this please! Assume it'll stop jumping... Unsure if we need this as well as or instead of the two above
+
+		bool MoveInputIgnoredAFT = IsMoveInputIgnored();
+		FString IgnoredStringAFT = MoveInputIgnoredAFT ? TEXT("inputignored") : TEXT("NOTignored");
+		UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::SetIgnorePlayerControl][SERVER] aft - %s"), *IgnoredStringAFT);
+	}
+	else
+	{
+		//ClientSetIgnorePlayerInput(IgnoreInput);
+		bool MoveInputIgnoredBEF = IsMoveInputIgnored();
+		FString IgnoredStringBEF = MoveInputIgnoredBEF ? TEXT("inputignored") : TEXT("NOTignored");
+		UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::SetIgnorePlayerControl][CLIENT] bef - %s"), *IgnoredStringBEF);
+		//DisableInput(this);
+
+		ClientIgnoreMoveInput(IgnoreInput);
+		ClientIgnoreLookInput(IgnoreInput);
+
+		bool MoveInputIgnoredAFT = IsMoveInputIgnored();
+		FString IgnoredStringAFT = MoveInputIgnoredAFT ? TEXT("inputignored") : TEXT("NOTignored");
+		UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::SetIgnorePlayerControl][CLIENT] aft - %s"), *IgnoredStringAFT);
+	}
+}
+#pragma endregion
+
+
+#pragma region Server RPC
+
+#pragma endregion
+
+
+#pragma region Client RPC
+void AHISPlayerController::ClientUpdateHUDTimer_Implementation(int Seconds)
+{
+	// [TODO][IMPORTANT]
+	// Should store this at the very start! Do not call Cast on Tick!
+	// Then should not need debug else statement below
+	AHISHUD* HISHUD = Cast<AHISHUD>(GetHUD());
+	if (HISHUD)
+	{
+		if (HISHUD->CharacterOverlay)
+		{
+			HISHUD->CharacterOverlay->UpdateTimer(Seconds);
+		}
+		else
+		{
+			// THIS WILL GET HIT! Just leave rhis check in, no harm no foul?
+			UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::UpdateTimer] HISHUD->CharacterOverlay == nullptr"));
+		}
+	}
+	else
+	{
+		UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::UpdateTimer] HISHUD == nullptr ... major issue! (break)"));
+	}
+}
+
+
+void AHISPlayerController::ClientSetIgnorePlayerInput_Implementation(bool IgnoreInput)
+{
+	if (HasAuthority())
+	{
+		UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::ClientSetIgnorePlayerInput_Implementation] HasAuthority()"));
+	}
+	else
+	{
+		UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::ClientSetIgnorePlayerInput_Implementation] NO AUTH"));
+	}
+
+	ClientIgnoreMoveInput(IgnoreInput);
+	ClientIgnoreLookInput(IgnoreInput);
+
+	return;
+
+
+
 	bool MoveInputIgnoredBEF = IsMoveInputIgnored();
 	FString IgnoredStringBEF = MoveInputIgnoredBEF ? TEXT("inputignored") : TEXT("NOTignored");
-	UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::SetPlayerControl] bef - %s"), *IgnoredStringBEF);
+	UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::ServerSetIgnorePlayerInput_Implementation][cli] bef - %s"), *IgnoredStringBEF);
 	//DisableInput(this);							// [TODO] THIS DOES NOT LOOK CORRECT? Should we be calling this from HISGameMode itself?
 
 	SetIgnoreMoveInput(IgnoreInput);				// ... Or is this the right way of going about it?
@@ -94,54 +196,9 @@ void AHISPlayerController::SetPlayerControl(bool IgnoreInput)
 
 	bool MoveInputIgnoredAFT = IsMoveInputIgnored();
 	FString IgnoredStringAFT = MoveInputIgnoredAFT ? TEXT("inputignored") : TEXT("NOTignored");
-	UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::SetPlayerControl] aft - %s"), *IgnoredStringAFT);
-}
-
-
-void AHISPlayerController::FreezePlayerControl()
-{
-	//if (HasAuthority())
-	{
-		UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::FreezePlayerControl] xxxxx"));
-		//DisableInput(this);							// [TODO] THIS DOES NOT LOOK CORRECT? Should we be calling this from HISGameMode itself?
-	
-		SetIgnoreLookInput(true);						// ... Or is this the right way of going about it?
-		SetIgnoreMoveInput(true);
-	}
-	//else
-	//{
-	//	ServerFreezePlayerControl();
-	//}
-}
-
-void AHISPlayerController::ResumePlayerControl()
-{
-	//if (HasAuthority())
-	{
-		UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::ResumePlayerControl] ooooo"));
-		SetIgnoreLookInput(false);
-		SetIgnoreMoveInput(false);
-	}
-	//else
-	//{
-	//	ServerResumePlayerControl();
-	//}
+	UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::ServerSetIgnorePlayerInput_Implementation][cli] aft - %s"), *IgnoredStringAFT);
 }
 #pragma endregion
-
-
-void AHISPlayerController::ClientRPCUpdateHUDTimer_Implementation(float ElapsedSeconds)
-{
-	AHISHUD* HISHUD = Cast<AHISHUD>(GetHUD());						// [TODO][IMPORTANT] Should store this at the very start! Do not call Cast on Tick!
-	if (HISHUD)
-	{
-		HISHUD->CharacterOverlay->UpdateTimer(ElapsedSeconds);
-	}
-	else
-	{
-		UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::UpdateTimer] HISHUD == nullptr ... major issue! (break)"));
-	}
-}
 
 
 

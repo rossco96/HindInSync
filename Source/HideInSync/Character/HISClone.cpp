@@ -121,13 +121,18 @@ void AHISClone::FoundIgnore()
 
 void AHISClone::FoundReset_Implementation()
 {
-	//bIsFound = true;
+	//bIsFound = true;										// Do we need this?
 
 	// [TODO]
+	
 	//	o Show destroy animations + effects (+ sounds?)
+	
 	//	o Destroy
-	//	o Respawn
-	UE_LOG(LogActor, Warning, TEXT("[AHISClone::FoundReset][TODO] -- Show destroy animations and effects (and possibly sounds?) -- Destroy and respawn."));
+	Destroy();
+	
+	//	o Respawn (handled outside of this function)
+
+	//UE_LOG(LogActor, Warning, TEXT("[AHISClone::FoundReset][TODO] -- Show destroy animations and effects (and possibly sounds?) -- Destroy and respawn."));
 }
 
 void AHISClone::FoundSpectate()

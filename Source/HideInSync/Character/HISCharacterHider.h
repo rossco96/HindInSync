@@ -34,6 +34,12 @@ private:
 	UFUNCTION(Server, Reliable)
 	void ServerHideButtonPressed();
 
+	UFUNCTION(Server, Reliable)
+	void ServerDisableInput(class AHISPlayerController* HISController);
+
+	UFUNCTION(Client, Reliable)
+	void ClientDisableInput(class AHISPlayerController* HISController);
+
 	virtual void PossessedBy(AController* NewController);									// DELETE?
 
 public:
