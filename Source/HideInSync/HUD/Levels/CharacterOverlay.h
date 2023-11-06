@@ -14,7 +14,7 @@ class HIDEINSYNC_API UCharacterOverlay : public UUserWidget
 {
 	GENERATED_BODY()
 public:
-	void UpdateTimer(float ElapsedSeconds);
+	void UpdateTimer(int ElapsedSeconds);
 
 private:
 	UPROPERTY(meta = (BindWidget))
