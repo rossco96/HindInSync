@@ -24,7 +24,4 @@ private:
 
 	UFUNCTION(BlueprintCallable)
 	void StartGame();
-
-	UFUNCTION(BlueprintCallable)
-	void AddWidgetToOwningClient(class UWidget* Widget);
 };

@@ -13,7 +13,6 @@ class HIDEINSYNC_API AHISCharacter : public ACharacter
 
 public:
 	AHISCharacter();
-	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	UPROPERTY(Replicated)
@@ -26,22 +25,16 @@ protected:
 	void MoveRight(float Value);
 	void Turn(float Value);
 	void LookUp(float Value);
-
 	void Jump();
 
-	UPROPERTY(Replicated)
-	int PlayerId;
+	virtual void PossessedBy(AController* NewController) override;
 
-	bool bIsFound = false;									// We using this?
+	class AHISPlayerController* PlayerController;
+
+	bool bIsFound = false;										// We using this??
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-private:
-	//int PlayerId;
-
 public:	
-	FORCEINLINE void SetPlayerId(int Id) { PlayerId = Id; }
-	FORCEINLINE int GetPlayerId() { return PlayerId; }
-
-	FORCEINLINE bool GetIsFound() const { return bIsFound; }
+	FORCEINLINE bool GetIsFound() const { return bIsFound; }	// We using this?
 };

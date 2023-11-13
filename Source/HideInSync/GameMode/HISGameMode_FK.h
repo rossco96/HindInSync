@@ -16,5 +16,5 @@ class HIDEINSYNC_API AHISGameMode_FK : public AHISGameMode
 	GENERATED_BODY()
 	
 public:
-	virtual void PlayerFound(class AHISClone* FoundClone, /*class AHISPlayerController* HiderController,*/ class AHISPlayerController* SeekerController) override;
+	virtual void PlayerFound(class AHISClone* FoundClone, class AHISPlayerController* SeekerController) override;
 };

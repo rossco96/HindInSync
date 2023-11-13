@@ -7,7 +7,6 @@
 
 
 #pragma region Login / Logout
-// PostLogin is the first place where it's safe to access the player that just joined the game
 void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
@@ -17,31 +16,16 @@ void ALobbyGameMode::PostLogin(APlayerController* NewPlayer)
 	{
 	case 1:
 		HostController = Cast<ALobbyPlayerController>(NewPlayer);
-		//HostController->ClientSetHUD()
-		// Disable ButtonStartGame here? Or is it disabled by default?
 		break;
 	case 2:
-		// Enable ButtonStartGame here
-		if (HostController)											// This IF should never be required
+		// Enable ButtonStartGame here (this IF should never be required)
+		if (HostController)
 		{
 			HostController->HostSetHUDButtonStartGameEnabled(true);
 		}
 		break;
 	default:
 		break;
-	}
-
-	return;
-
-	if (NumberOfPlayers == 2)
-	{
-
-	}
-
-	if (NumberOfPlayers == 3)
-	//if (NumberOfPlayers == 2)											// [TODO] Temp hardcoded '2' --> Will want a button to start the game? Unless public match ... Event then, could use request start (which begins say 2 min countdown so trolls can't just like never begin the match... That or just have a timer once a minimum number of players reached?)
-	{
-		StartGame();
 	}
 }
 
@@ -59,10 +43,7 @@ void ALobbyGameMode::Logout(AController* Exiting)
 		if (HostController)
 		{
 			// Disable ButtonStartGame here
-			if (HostController)
-			{
-				HostController->HostSetHUDButtonStartGameEnabled(false);
-			}
+			HostController->HostSetHUDButtonStartGameEnabled(false);
 		}
 		else
 		{
@@ -82,12 +63,8 @@ void ALobbyGameMode::StartGame()
 	if (World)
 	{
 		bUseSeamlessTravel = true;
-		World->ServerTravel(FString("/Game/Maps/Test/HISMap?listen"));	// '?listen' option specifies that it'll be open as a listen server for clients to connect to
+		World->ServerTravel(FString("/Game/Maps/Test/HISMap?listen"));
+		// '?listen' option above specifies that it'll be open as a listen server for clients to connect to
 	}
-}
-
-void ALobbyGameMode::AddWidgetToOwningClient(class UWidget* Widget)
-{
-
 }
 #pragma endregion

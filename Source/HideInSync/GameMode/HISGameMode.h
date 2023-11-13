@@ -25,7 +25,8 @@ protected:
 	virtual void BeginPlay() override;
 
 	void StartWaitTimer(float Duration, FSimpleDelegate::TMethodPtr<AHISGameMode> OnComplete);
-	void StartWaitTimerWithInputEnabled(float Duration, FSimpleDelegate::TMethodPtr<AHISGameMode> OnComplete, class AHISPlayerController* HISController, bool InputEnabled);
+	// [NOTE] Below not currently used... Consider if actually needed
+	void StartWaitTimerWithDisableInput(float Duration, FSimpleDelegate::TMethodPtr<AHISGameMode> OnComplete, class AHISPlayerController* HISController, bool DisableInput);
 	void StartGameTimer();
 
 	// [TODO]
@@ -47,25 +48,24 @@ private:
 	FTimerHandle WaitTimer;
 	FTimerHandle GameTimer;
 
-	FTimerHandle GameStartTimer;
-	FTimerHandle HideTimer;
-	FTimerHandle RespawnDelayTimer;
-	FTimerHandle RespawnTimer;
-
 	bool bIsShowingCountdown = false;					// This isn't a great name for this bool (used when waiting - i.e. show the timer counting down rather than the game timer)
 	void UpdatePlayerCountdown();
 	bool bHasGameStarted = false;
-	void UpdatePlayerTimers();
+	void UpdatePlayersGameTimers();
 	
 	// [TEST] Do not do like this!!
+	// Need to consider:
+	//	o How to get expected number of players
+	//	o Then if anyone drops before joining
+	//	o Then if anyone drops after loading into the level
 	const int TEST_NumberOfPlayers = 3;
 
-	// [TODO][IMPORTANT] 10.0f for testing only! Want 3.0f
-	const float WaitCountdown = 5.0f;					// Used for both game start, and respawning ... any others?
+	// [TODO][IMPORTANT] 7.0f for testing only! Want 3.0f
+	const float WaitCountdown = 7.0f;					// Used for both game start and respawning ... any others?
 
 	const float HideTimeLimit = 15.0f;					// [TODO] DO NOT DO THIS! Want it customisable! DELETE!
-	const float RespawnDelay = 1.0f;					// [TODO] Delete this too - trigger a function at the end of the camera zoom out animation
-	const float RespawnTimeLimit = 3.0f;				// Also customisable?
+	//const float RespawnDelay = 1.0f;					// [TODO] Delete - trigger a function at the end of the camera zoom out animation
+	//const float RespawnTimeLimit = 3.0f;				// Consider including this (i.e. allow for a different starting hide time limit as to the one mid-game)
 
 	int CurrentWaitTime = 0;
 	int CurrentGameTime = 0;
@@ -76,17 +76,14 @@ private:
 
 	void HideClone(int PlayerId);
 
+	//void RestartPlayerAtPlayerStart();				// Consider different types of where and how to spawn the player(s)
+
 public:
 	void SetSpawnLocation(int PlayerId, FVector SpawnLocation, FRotator SpawnRotation);
 	void SetCloneHidingLocation(class AHISPlayerController* HiderController, FVector Location, FRotator Rotation);
-	//void SetCloneHidingLocation(class AHISCharacterHider* Hider, FVector Location, FRotator Rotation);
 
-	virtual void PlayerFound(class AHISClone* FoundClone, /*class AHISPlayerController* HiderController,*/ class AHISPlayerController* SeekerController);
-	//virtual void RequestRespawn(class AHISCharacter* CurrentCharacter, class AHISCharacter* NextCharacter, class AHISPlayerController* HISPlayerController);
-	
-	// [TODO] Could turn this into one function, RequestRespawn, simply passing AHISCharacter? Or would it be easier to have separate???
-	//virtual void RequestRespawnHider(class AHISCharacterHider* Hider, class AHISPlayerController* HISPlayerController);
-	//virtual void RequestRespawnSeeker(class AHISCharacterSeeker* Seeker, class AHISPlayerController* HISPlayerController);
+	// [TODO][Important] May need to reconsider signature of this function?
+	virtual void PlayerFound(class AHISClone* FoundClone, class AHISPlayerController* SeekerController);
 };
 
 

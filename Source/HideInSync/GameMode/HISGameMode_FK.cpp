@@ -12,9 +12,9 @@
 //	o Clone owners (the respective seekers) are frozen once found
 //	o Clone owners are then reset as hiders (with their own hiding time limit, if applicable)
 
-void AHISGameMode_FK::PlayerFound(class AHISClone* FoundClone, /*class AHISPlayerController* HiderController,*/ class AHISPlayerController* SeekerController)
+void AHISGameMode_FK::PlayerFound(class AHISClone* FoundClone, class AHISPlayerController* SeekerController)
 {
-	Super::PlayerFound(FoundClone, /*HiderController,*/ SeekerController);		// [TODO] Want this? Or override completely? Figure out if anything in common! E.g. scores
+	Super::PlayerFound(FoundClone, SeekerController);		// [TODO] Want this? Or override completely? Figure out if anything in common! E.g. scores
 	
 	if (FoundClone)
 	{

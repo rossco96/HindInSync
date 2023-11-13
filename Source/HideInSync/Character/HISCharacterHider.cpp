@@ -3,8 +3,6 @@
 
 #include "HISCharacterHider.h"
 #include "Camera/CameraComponent.h"
-#include "GameFramework/Character.h"
-#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "HideInSync/GameMode/HISGameMode.h"
 #include "HideInSync/PlayerController/HISPlayerController.h"
@@ -14,9 +12,6 @@
 #pragma region Unreal Functions
 AHISCharacterHider::AHISCharacterHider()
 {
-	// Can delete the below, since inheriting from HISCharacter?
-	//PrimaryActorTick.bCanEverTick = true;
-
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(GetMesh());
 	CameraBoom->TargetArmLength = 600.0f;
@@ -25,13 +20,6 @@ AHISCharacterHider::AHISCharacterHider()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("ThirdPersonCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
-
-	// Don't think I need this below, as class inherits ACharacter (not APawn)
-	// Would only be used for the AreaSphere code... Test it, I guess
-	//bReplicates = true;
-
-	// This is also not needed. Apparently. Again, think ACharacter already specifies? Somehow??
-	//SetRootComponent(GetMesh());
 }
 
 
@@ -41,29 +29,6 @@ void AHISCharacterHider::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 
 	PlayerInputComponent->BindAction("Hide", IE_Pressed, this, &AHISCharacterHider::HideClone);
 }
-
-
-void AHISCharacterHider::BeginPlay()
-{
-	Super::BeginPlay();
-
-	if (HasAuthority())
-	{
-		// Does anything need doing in here? Previous things have since been refactored out!
-	}
-
-	// Disable input in here?
-	// Do we have a PlayerController assigned yet?
-	// Do we need to poll for it in Tick??
-
-	//bDisableInput = true;					// Need disabled in parent, after all
-}
-
-
-void AHISCharacterHider::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-}
 #pragma endregion
 
 
@@ -72,21 +37,10 @@ void AHISCharacterHider::HideClone()
 {
 	if (HasAuthority())
 	{
-		UE_LOG(LogActor, Warning, TEXT("[AHISCharacterHider::HideClone] HAS AUTH (i.e. we are the server)"));
-
-		//GetMesh()->bOnlyOwnerSee = false;
-
-		// [TODO][IMPORTANT] Change this! Set bOnlyOwnerSee (in BP itself) instead!
-		// ... Will eventually be deleting this anyway since we're destroying and replacing with a clone
-		//bOnlyRelevantToOwner = false;
-
 		FVector CloneLocation = GetTransform().GetLocation();
 		FRotator CloneRotation = GetTransform().GetRotation().Rotator();
-		
 		AHISGameMode* HISGameMode = GetWorld()->GetAuthGameMode<AHISGameMode>();
-		//HISGameMode->SetCloneHidingLocation(this, CloneLocation, CloneRotation);
-		AHISPlayerController* HISPlayerController = Cast<AHISPlayerController>(GetController());	// [TODO] Store this cast, if using often?
-		HISGameMode->SetCloneHidingLocation(HISPlayerController, CloneLocation, CloneRotation);
+		HISGameMode->SetCloneHidingLocation(PlayerController, CloneLocation, CloneRotation);
 	}
 	else
 	{
@@ -133,10 +87,6 @@ void AHISCharacterHider::HideClone()
 	// [TODO] However! Want this executed by the GLM.
 	// (Depending on the game state! If we're re-hiding mid-level, if settings permit, then want to execute it here... Right? Should still run via GLM? With timeout??)
 
-		
-	// RPC THIS!!!
-	//bOnlyRelevantToOwner = false;														// <<< Not doing like that anymore?
-
 
 	// [TODO] Spawn HISCharacterActive from EXISTING (also [TODO]) PlayerStart position
 	// Same rules as above, spawning via GLM (etc.)
@@ -149,73 +99,27 @@ void AHISCharacterHider::HideClone()
 
 
 #pragma region Server Functions
-//*
 void AHISCharacterHider::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 	// This is only called on the server - no need to check HasAuthority()
 
-	AHISPlayerController* HISController = Cast<AHISPlayerController>(NewController);
-	if (HISController == nullptr)
-	{
-		UE_LOG(LogActor, Warning, TEXT("[AHISCharacterHider::PossessedBy] HISController == nullptr >>>>> HELP!!!!!"));
-		return;
-	}
-
-	/*
-	if (HasAuthority())
-	{
-		UE_LOG(LogActor, Warning, TEXT("[AHISCharacterHider::PossessedBy] DisableInput - SERVER"));
-		ClientDisableInput(HISController);
-	}
-	else
-	{
-		UE_LOG(LogActor, Warning, TEXT("[AHISCharacterHider::PossessedBy] disable_input_client"));
-		ServerDisableInput(HISController);
-	}
-	//*/
-
 	AHISGameMode* HISGameMode = GetWorld()->GetAuthGameMode<AHISGameMode>();
 	if (HISGameMode)
 	{
-		//HISGameMode->SetSpawnLocation(HISController->GetPlayerId(), GetTransform().GetLocation(), GetTransform().GetRotation().Rotator());
-		int ControllerPlayerId = HISController->GetPlayerId();
-		
-		// [TODO][IMPORTANT] Check if class member PlayerId set in here already? Rename the above to ControllerPlayerId for now and use that
-		UE_LOG(LogActor, Warning, TEXT("[AHISCharacterHider::PossessedBy] (this)PlayerId = %i // ControllerPlayerId = %i"), PlayerId, ControllerPlayerId);
-		
-		FVector Location = HISController->GetCurrentLocation();
-		FRotator Rotation = HISController->GetCurrentRotation();
+		int ControllerPlayerId = PlayerController->GetPlayerId();
+		FVector Location = PlayerController->GetCurrentLocation();
+		FRotator Rotation = PlayerController->GetCurrentRotation();
 		HISGameMode->SetSpawnLocation(ControllerPlayerId, Location, Rotation);
-		UE_LOG(LogActor, Warning, TEXT("[AHISCharacterHider::PossessedBy] s u c c e s s"));
 	}
 }
-//*/
 
 
 void AHISCharacterHider::ServerHideButtonPressed_Implementation()
 {
-	UE_LOG(LogActor, Warning, TEXT("[AHISCharacterHider::ServerHideButtonPressed] (no auth)"));
-
-	//GetMesh()->bOnlyOwnerSee = false;
-
 	FVector CloneLocation = GetTransform().GetLocation();
 	FRotator CloneRotation = GetTransform().GetRotation().Rotator();
-
 	AHISGameMode* HISGameMode = GetWorld()->GetAuthGameMode<AHISGameMode>();
-	//HISGameMode->SetCloneHidingLocation(this, CloneLocation, CloneRotation);
-	AHISPlayerController* HISPlayerController = Cast<AHISPlayerController>(GetController());	// [TODO] Store this cast, if using often?
-	HISGameMode->SetCloneHidingLocation(HISPlayerController, CloneLocation, CloneRotation);
-}
-
-
-void AHISCharacterHider::ServerDisableInput_Implementation(AHISPlayerController* HISController)
-{
-	DisableInput(HISController);
-}
-
-void AHISCharacterHider::ClientDisableInput_Implementation(AHISPlayerController* HISController)
-{
-	DisableInput(HISController);
+	HISGameMode->SetCloneHidingLocation(PlayerController, CloneLocation, CloneRotation);
 }
 #pragma endregion

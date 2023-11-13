@@ -36,21 +36,13 @@ void AHISCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Need disabled here in parent, after all!
 	bDisableInput = true;
-}
-
-
-void AHISCharacter::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
 }
 
 
 void AHISCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(AHISCharacter, PlayerId);
 	DOREPLIFETIME(AHISCharacter, bDisableInput);
 }
 #pragma endregion
@@ -97,3 +89,11 @@ void AHISCharacter::Jump()
 	Super::Jump();
 }
 #pragma endregion
+
+
+void AHISCharacter::PossessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+
+	PlayerController = Cast<AHISPlayerController>(NewController);
+}

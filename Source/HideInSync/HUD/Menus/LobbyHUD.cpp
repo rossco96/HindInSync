@@ -3,18 +3,6 @@
 
 #include "LobbyHUD.h"
 #include "LobbyOverlayBase.h"
-//#include "Net/UnrealNetwork.h"
-
-/*
-void ALobbyHUD::BeginPlay()
-{
-	Super::BeginPlay();
-
-
-
-	//AddLobbyOverlay(true);
-}
-//*/
 
 
 void ALobbyHUD::ClientAddLobbyOverlay_Implementation(bool IsHost)

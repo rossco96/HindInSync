@@ -14,7 +14,7 @@ class HIDEINSYNC_API AHISHUD : public AHUD
 {
 	GENERATED_BODY()
 public:
-	virtual void DrawHUD() override;						// Currently doing nothing
+	virtual void DrawHUD() override;						// Currently doing nothing, but included in the course
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UUserWidget> CharacterOverlayClass;

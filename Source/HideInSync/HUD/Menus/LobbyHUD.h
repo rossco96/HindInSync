@@ -6,9 +6,6 @@
 #include "GameFramework/HUD.h"
 #include "LobbyHUD.generated.h"
 
-// [TODO][IMPORTANT]
-// Refactor - need ULobbyOverlayBase from which Host and Client types can inherit from
-
 /**
  * 
  */
@@ -23,8 +20,6 @@ public:
 	TSubclassOf<class UUserWidget> LobbyOverlayClientClass;
 
 	class ULobbyOverlayBase* LobbyOverlay;
-//protected:
-//	virtual void BeginPlay() override;
 private:
 	UFUNCTION(Client, Reliable, BlueprintCallable)
 	void ClientAddLobbyOverlay(bool IsHost);

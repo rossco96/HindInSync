@@ -21,7 +21,6 @@ public:
 private:
 	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	class AHISCharacter* HISCharacter;
-	//class AHISCharacterClone* HISCharacter;
 
 	UPROPERTY(BlueprintReadOnly, Category = Character, meta = (AllowPrivateAccess = "true"))
 	float Speed;

@@ -6,10 +6,6 @@
 #include "LobbyOverlayBase.h"
 #include "LobbyOverlayHost.generated.h"
 
-// [TODO]
-// Refactor this! Want LobbyOverlayBase, with children Host and Client
-// (and what about Public lobbies? Same as private Client?)
-
 /**
  * 
  */
@@ -19,28 +15,18 @@ class HIDEINSYNC_API ULobbyOverlayHost : public ULobbyOverlayBase
 	GENERATED_BODY()
 
 public:
-	//class UButton* ButtonStartGame;
 	void SetButtonStartGameEnabled(bool Enabled);
 	
 private:
-	UPROPERTY(meta = (BindWidget))				// Should this be		UPROPERTY(meta = (BindWidget))	or	UPROPERTY(EditAnywhere)		??? Enabling/disabling as people join/leave the lobby
+	// Need binding for enabling and disabling
+	UPROPERTY(meta = (BindWidget))
 	class UButton* ButtonStartGame;
 
-	// Should I just make ButtonStartGame public? Only really used for setting enabled/disabled?
-
-	// Do the below need to be declared in this class? Or can it be done entirely through blueprints?
-
-	/*
-	UPROPERTY(EditAnywhere)
-	UButton* ButtonMatchSettings;
-
-	UPROPERTY(EditAnywhere)
-	UButton* ButtonCharacterCustomisation;
-
-	UPROPERTY(EditAnywhere)
-	UButton* ButtonPlayerSettings;
-
-	UPROPERTY(EditAnywhere)
+	// Need binding to ensure the next player in the lobby can see a "becoming host" popup and receive the LobbyOverlayHost
+	// (Make sure we show 'are you sure' prompt for both host and client)
+	UPROPERTY(meta = (BindWidget))
 	UButton* ButtonBack;
-	//*/
+
+	// Can just use blueprints for the below?
+	// ButtonMatchSettings, ButtonCharacterCustomisation, ButtonPlayerSettings
 };

@@ -3,7 +3,6 @@
 
 #include "HISAnimInstance.h"
 #include "HISCharacter.h"
-//#include "HISCharacterClone.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 void UHISAnimInstance::NativeInitializeAnimation()
@@ -11,7 +10,6 @@ void UHISAnimInstance::NativeInitializeAnimation()
 	Super::NativeInitializeAnimation();
 
 	HISCharacter = Cast<AHISCharacter>(TryGetPawnOwner());
-	//HISCharacter = Cast<AHISCharacterClone>(TryGetPawnOwner());
 }
 
 void UHISAnimInstance::NativeUpdateAnimation(float DeltaTime)
@@ -21,7 +19,6 @@ void UHISAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	if (HISCharacter == nullptr)
 	{
 		HISCharacter = Cast<AHISCharacter>(TryGetPawnOwner());
-		//HISCharacter = Cast<AHISCharacterClone>(TryGetPawnOwner());
 		return;
 	}
 

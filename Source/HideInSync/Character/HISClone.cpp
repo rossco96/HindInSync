@@ -6,26 +6,14 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
-//#include "Components/MeshComponent.h"
-//#include "Engine/StaticMesh.h"
-#include "Net/UnrealNetwork.h"						// [TODO] Not currently in use? Will be for Found functions?
+#include "Net/UnrealNetwork.h"
 
 
 #pragma region Unreal Functions
 AHISClone::AHISClone()
 {
-	// [TODO] PROBABLY safe in not ticking???
-	PrimaryActorTick.bCanEverTick = false;
-
-	// [TODO] DOUBLE CHECK THE BELOW!
-	// Think the below IS needed here, as class inherits AActor (not ACharacter)
 	bReplicates = true;
 
-	// [TODO] Only here & false temporarily!
-	//bUseControllerRotationYaw = false;
-	//GetCharacterMovement()->bOrientRotationToMovement = true;
-
-	// Create mesh subobject so players can be found
 	AreaSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AreaSphere"));
 	SetRootComponent(AreaSphere);
 	AreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
@@ -37,7 +25,6 @@ AHISClone::AHISClone()
 	CapsuleCollider = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CapsuleCollider"));
 	CapsuleCollider->SetupAttachment(CloneMesh);
 
-	// Setup FoundWidget (to popup when clone can be tagged)
 	FoundWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("FoundWidget"));
 	FoundWidget->SetupAttachment(AreaSphere);
 }
@@ -51,7 +38,6 @@ void AHISClone::BeginPlay()
 	{
 		AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 		AreaSphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
-		// [TODO] Will we want to (and can we??) change ECollisionChannel to e.g. ECC_EnemyClone? Is this customisable??
 
 		// Only want checks to be made on the server, so can assign here rather than the constructor:
 		AreaSphere->OnComponentBeginOverlap.AddDynamic(this, &AHISClone::OnSphereOverlap);

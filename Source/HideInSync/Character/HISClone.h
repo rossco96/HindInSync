@@ -18,7 +18,6 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
-	//UPROPERTY(EditAnywhere, meta = (AllowPrivateAccess = "true"))						// Porque es aqui?
 	UPROPERTY(Replicated)
 	int PlayerId;
 
@@ -59,7 +58,7 @@ public:
 
 	FORCEINLINE bool IsFound() { return bIsFound; }				// We using this?
 
-	void ShowFoundWidget(bool bShowWidget);// { if (FoundWidget) { FoundWidget->SetVisibility(bShowWidget); } }
+	void ShowFoundWidget(bool bShowWidget);
 	
 	void FoundIgnore();
 	UFUNCTION(NetMulticast, Reliable)							// [TODO] Aren't they all like this? Also THINK! Do we need NetMulticast? Or Server, or something else?

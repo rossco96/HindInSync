@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "HISCharacter.h"
 #include "HISCharacterHider.generated.h"
 
@@ -14,10 +13,9 @@ class HIDEINSYNC_API AHISCharacterHider : public AHISCharacter
 public:
 	AHISCharacterHider();
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	virtual void Tick(float DeltaTime) override;
 
 protected:
-	virtual void BeginPlay() override;
+	virtual void PossessedBy(AController* NewController) override;
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
@@ -27,20 +25,8 @@ private:
 
 	void HideClone();
 
-	// [TODO] Don't need to store these? Can just pass to HISGameMode (or better, HISPlayerController) upon spawning?
-	//FVector SpawnLocation;
-	//FRotator SpawnRotation;
-
 	UFUNCTION(Server, Reliable)
 	void ServerHideButtonPressed();
-
-	UFUNCTION(Server, Reliable)
-	void ServerDisableInput(class AHISPlayerController* HISController);
-
-	UFUNCTION(Client, Reliable)
-	void ClientDisableInput(class AHISPlayerController* HISController);
-
-	virtual void PossessedBy(AController* NewController);									// DELETE?
 
 public:
 	FORCEINLINE FVector GetLocation() { return GetTransform().GetLocation(); }

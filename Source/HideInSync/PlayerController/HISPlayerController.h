@@ -18,25 +18,16 @@ public:
 	FORCEINLINE void SetPlayerId(int Id) { PlayerId = Id; }
 	FORCEINLINE int GetPlayerId() { return PlayerId; }
 
-	//FORCEINLINE FVector GetCurrentLocation() { return GetCharacter()->GetTransform().GetLocation(); }
-	//FORCEINLINE FRotator GetCurrentRotation() { return GetActorRotation().Rotator(); }
-	FVector GetCurrentLocation();
-	FRotator GetCurrentRotation();
-
-	void SetIgnorePlayerInput(bool IgnoreInput);
-
-	UFUNCTION(Client, Reliable)										// Assume we need reliable, even if only update once every second?
-	void ClientUpdateHUDTimer(int Seconds);							// Need this here since server cannot access player HUDs?
+	FORCEINLINE FVector GetCurrentLocation() { return GetCharacter()->GetTransform().GetLocation(); }
+	FORCEINLINE FRotator GetCurrentRotation() { return GetCharacter()->GetTransform().GetRotation().Rotator(); }
 
 	UFUNCTION(Client, Reliable)
-	void ClientSetIgnorePlayerInput(bool IgnoreInput);
+	void ClientUpdateHUDTimer(int Seconds);
 
-	virtual void BeginPlay() override;								// [TODO][DELETE] Testing only!
+protected:
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
-	UPROPERTY(VisibleAnywhere)										// [TODO][DELETE] Testing only!
+	UPROPERTY(Replicated)
 	int PlayerId;
-
-	//UFUNCTION(Client, Reliable)
-	//void ClientSetIgnorePlayerInput(bool IgnoreInput);
 };
