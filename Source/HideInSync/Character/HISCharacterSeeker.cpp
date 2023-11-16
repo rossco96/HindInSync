@@ -56,6 +56,12 @@ void AHISCharacterSeeker::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 
 void AHISCharacterSeeker::OnRep_FoundClone(AHISClone* LastClone)
 {
+	if (PlayerController == nullptr)
+	{
+		UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::SetFoundClone] PlayerController is nullptr -- MAJOR ERROR AT THIS POINT !!!!!"));
+		return;
+	}
+
 	if (FoundClone != nullptr && FoundClone->GetPlayerId() == PlayerController->GetPlayerId()) return;
 	
 	if (FoundClone)

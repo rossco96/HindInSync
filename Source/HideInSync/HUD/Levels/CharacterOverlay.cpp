@@ -14,3 +14,10 @@ void UCharacterOverlay::UpdateTimer(int Seconds)
 		GameTimer->SetText(FText::FromString(TimeString));
 	}
 }
+
+void UCharacterOverlay::SetFoundTextVisible(bool bIsVisible)
+{
+	ESlateVisibility TextVisibility = (bIsVisible) ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Hidden;
+	//FoundText->SetIsEnabled(bEnableText);
+	FoundText->SetVisibility(TextVisibility);
+}

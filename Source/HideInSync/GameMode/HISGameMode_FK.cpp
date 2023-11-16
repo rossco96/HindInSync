@@ -19,6 +19,9 @@ void AHISGameMode_FK::PlayerFound(class AHISClone* FoundClone, class AHISPlayerC
 	if (FoundClone)
 	{
 		// [TODO] See bullet points...
+
+		// [TODO]
+		// Try move a lot of this to AHISGameMode::PlayerFound (parent)
 		
 		//	o Play FOUND animation and sound for clone (and disappear)		--> Put this inside "FoundReset"
 		//	o Destroy the clone
@@ -32,12 +35,18 @@ void AHISGameMode_FK::PlayerFound(class AHISClone* FoundClone, class AHISPlayerC
 		AHISCharacter* HISCharacter = Cast<AHISCharacter>(FoundPlayerController->GetPawn());
 		HISCharacter->bDisableInput = true;
 		
-		//	o Zoom out from seeker (move first person camera to third person)
+		//	o Zoom out from seeker (move first person camera to third person) and show FOUND text
+		FoundPlayerController->ClientSetFoundTextVisible(true);
 		
 		//	o Play FOUND animation and sound for seeker (and disappear, and destroy)
 		
 		//	o Respawn (after a few seconds?) the found player as a hider
-		//RequestRespawn(FoundPlayerId);									// Commented out for now, to test client SetIgnorePlayerInput
+		//RequestRespawn(FoundPlayerId);										// Commented out for now, to test client SetIgnorePlayerInput
+		//PlayerRespawnIds.Add(FoundPlayerId);									// Delete - now using CurrentRespawnId
+		
+		//StartWaitTimer(TEST_RespawnDelay, &AHISGameMode_FK::RequestRespawn);	// Old way of doing it
+		FTimerHandle WaitTimer = PlayersData[FoundPlayerId].GetWaitTimer();
+		GetWorldTimerManager().SetTimer(WaitTimer, this, &AHISGameMode_FK::RequestRespawn, TEST_RespawnDelay);
 	}
 
 

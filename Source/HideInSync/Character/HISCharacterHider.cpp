@@ -104,13 +104,20 @@ void AHISCharacterHider::PossessedBy(AController* NewController)
 	Super::PossessedBy(NewController);
 	// This is only called on the server - no need to check HasAuthority()
 
+	UE_LOG(LogActor, Warning, TEXT("[AHISCharacterHider::PossessedBy] PossessedBy -- Hider (child)"));
+
 	AHISGameMode* HISGameMode = GetWorld()->GetAuthGameMode<AHISGameMode>();
 	if (HISGameMode)
 	{
-		int ControllerPlayerId = PlayerController->GetPlayerId();
-		FVector Location = PlayerController->GetCurrentLocation();
-		FRotator Rotation = PlayerController->GetCurrentRotation();
-		HISGameMode->SetSpawnLocation(ControllerPlayerId, Location, Rotation);
+		if (PlayerController)
+		{
+			int ControllerPlayerId = PlayerController->GetPlayerId();
+			//FVector Location = PlayerController->GetCurrentLocation();
+			//FRotator Rotation = PlayerController->GetCurrentRotation();
+			FVector Location = GetTransform().GetLocation();
+			FRotator Rotation = GetTransform().GetRotation().Rotator();
+			HISGameMode->SetSpawnLocation(ControllerPlayerId, Location, Rotation);
+		}
 	}
 }
 

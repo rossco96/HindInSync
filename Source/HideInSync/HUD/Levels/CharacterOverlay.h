@@ -16,7 +16,12 @@ class HIDEINSYNC_API UCharacterOverlay : public UUserWidget
 public:
 	void UpdateTimer(int Seconds);
 
+	void SetFoundTextVisible(bool bIsVisible);
+
 private:
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* GameTimer;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* FoundText;
 };

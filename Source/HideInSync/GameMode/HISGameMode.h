@@ -24,17 +24,15 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
-	void StartWaitTimer(float Duration, FSimpleDelegate::TMethodPtr<AHISGameMode> OnComplete);
-	// [NOTE] Below not currently used... Consider if actually needed
-	void StartWaitTimerWithDisableInput(float Duration, FSimpleDelegate::TMethodPtr<AHISGameMode> OnComplete, class AHISPlayerController* HISController, bool DisableInput);
-	void StartGameTimer();
-
 	// [TODO]
 	// Think I can get away with this being protected?
 	// Was previously public -- WHY IS IT VIRTUAL?
-	virtual void RequestRespawn(int PlayerId);
+	//virtual void RequestRespawn(int PlayerId);			// [TODO] Delete - want to be able to call without arguments (see PlayerRespawnIds TArray below)
+	virtual void RequestRespawn();
 	
 	TMap<int, PlayerGameData> PlayersData;
+
+	const float TEST_RespawnDelay = 5.0f;					// [TODO] Delete - trigger a function at the end of the camera zoom out animation
 
 private:
 	// [TODO] Think about how we're getting the cosmetics of each player to then dress the clone appropriately
@@ -45,13 +43,16 @@ private:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AHISClone> CloneClass;
 
-	FTimerHandle WaitTimer;
+	FTimerHandle JointWaitTimer;
 	FTimerHandle GameTimer;
 
-	bool bIsShowingCountdown = false;					// This isn't a great name for this bool (used when waiting - i.e. show the timer counting down rather than the game timer)
-	void UpdatePlayerCountdown();
 	bool bHasGameStarted = false;
-	void UpdatePlayersGameTimers();
+
+	bool bIsJointWaitTimer = true;						// Used at the very start (and possibly very end) of the match
+	void UpdateJointWaitTimer();
+	void UpdatePlayerHUDCountdown(int PlayerId);
+	void UpdatePlayerHUDGameTimer(int PlayerId);
+	void CheckGameTimer();
 	
 	// [TEST] Do not do like this!!
 	// Need to consider:
@@ -60,20 +61,31 @@ private:
 	//	o Then if anyone drops after loading into the level
 	const int TEST_NumberOfPlayers = 3;
 
+	// [TODO] Hack, not ideal, 'max' below returns a negative number??
+	//		std::numeric_limits<float>::max()
+	// (below is ~317 years, for anyone interested)
+	const float MaxGameTime = 9999999999.9f;
+
 	// [TODO][IMPORTANT] 7.0f for testing only! Want 3.0f
 	const float WaitCountdown = 7.0f;					// Used for both game start and respawning ... any others?
 
-	const float HideTimeLimit = 15.0f;					// [TODO] DO NOT DO THIS! Want it customisable! DELETE!
-	//const float RespawnDelay = 1.0f;					// [TODO] Delete - trigger a function at the end of the camera zoom out animation
+	const float TEST_HideTimeLimit = 15.0f;					// [TODO] DO NOT DO THIS! Want it customisable! DELETE!
 	//const float RespawnTimeLimit = 3.0f;				// Consider including this (i.e. allow for a different starting hide time limit as to the one mid-game)
 
-	int CurrentWaitTime = 0;
+	int JointWaitTimeRemaining = 0;
 	int CurrentGameTime = 0;
 
-	void PreGameCountdownFinished();
-	void InitialHideTimerFinished();
-	void InitialSeekTimerFinished();
+	void LevelLoadCountdownFinished();
+	void JointHideTimerFinished();
+	void JointSeekTimerFinished();
+	void IndividualHiderRespawnWaitFinished();
+	void IndividualHideTimerFinished();
+	void IndividualSeekerRespawnWaitFinished();
 
+	int GetPlayerIdByRespawnState(ERespawnState RespawnState);
+
+	void SetCloneHidingLocationPreGame();
+	void SetCloneHidingLocationIndividual(int PlayerId);
 	void HideClone(int PlayerId);
 
 	//void RestartPlayerAtPlayerStart();				// Consider different types of where and how to spawn the player(s)

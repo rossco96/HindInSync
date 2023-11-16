@@ -44,11 +44,23 @@ void PlayerGameData::SetSpawnPosition(FVector Location, FRotator Rotation)
 	bSpawnPositionSet = true;
 }
 
+void PlayerGameData::ResetSpawn()
+{
+	bSpawnPositionSet = false;
+}
+
+
 void PlayerGameData::SetHidePosition(FVector Location, FRotator Rotation)
 {
+	UE_LOG(LogActor, Warning, TEXT("[PlayerGameData::SetHidePosition] ~~~HIDINGPLAYER~~~"));
 	HideLocation = Location;
 	HideRotation = Rotation;
 	bIsHidden = true;
+}
+
+void PlayerGameData::ResetHide()
+{
+	bIsHidden = false;
 }
 #pragma endregion
 

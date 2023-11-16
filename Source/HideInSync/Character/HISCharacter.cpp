@@ -40,6 +40,26 @@ void AHISCharacter::BeginPlay()
 }
 
 
+/*
+void AHISCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (IsLocallyControlled() == false) return;
+	//if (IsLocalPlayerController() == false) return;
+
+	if (bHasPlayerController == false)
+	{
+		PlayerController = Cast<AHISPlayerController>(GetController());
+		if (PlayerController)
+		{
+			bHasPlayerController = true;
+		}
+	}
+}
+//*/
+
+
 void AHISCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -95,5 +115,16 @@ void AHISCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 
+	// This is only called on the server - no need to check HasAuthority()
+
 	PlayerController = Cast<AHISPlayerController>(NewController);
+	ClientSetPlayerController(PlayerController);													// THIS FEELS WRONG? But not sure why else I'd be getting the error...
+	UE_LOG(LogActor, Warning, TEXT("[AHISCharacter::PossessedBy] PossessedBy -- parent // We must be the Server in this function?"));
+}
+
+
+void AHISCharacter::ClientSetPlayerController_Implementation(AHISPlayerController* NewController)
+{
+	PlayerController = NewController;
+	UE_LOG(LogActor, Warning, TEXT("[AHISCharacter::ClientSetPlayerController] ClientRPC."));
 }

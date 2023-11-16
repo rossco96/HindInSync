@@ -20,6 +20,8 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+	//virtual void Tick(float DeltaTime) override;
+	virtual void PossessedBy(AController* NewController) override;
 
 	void MoveForward(float Value);
 	void MoveRight(float Value);
@@ -27,13 +29,16 @@ protected:
 	void LookUp(float Value);
 	void Jump();
 
-	virtual void PossessedBy(AController* NewController) override;
-
 	class AHISPlayerController* PlayerController;
+	//bool bHasPlayerController = false;
 
 	bool bIsFound = false;										// We using this??
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+private:
+	UFUNCTION(Client, Reliable)
+	void ClientSetPlayerController(AHISPlayerController* NewController);
 
 public:	
 	FORCEINLINE bool GetIsFound() const { return bIsFound; }	// We using this?
