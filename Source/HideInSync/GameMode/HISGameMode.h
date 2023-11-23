@@ -25,14 +25,12 @@ protected:
 	virtual void BeginPlay() override;
 
 	// [TODO]
-	// Think I can get away with this being protected?
-	// Was previously public -- WHY IS IT VIRTUAL?
-	//virtual void RequestRespawn(int PlayerId);			// [TODO] Delete - want to be able to call without arguments (see PlayerRespawnIds TArray below)
+	// WHY IS IT VIRTUAL?
 	virtual void RequestRespawn();
 	
 	TMap<int, PlayerGameData> PlayersData;
 
-	const float TEST_RespawnDelay = 5.0f;					// [TODO] Delete - trigger a function at the end of the camera zoom out animation
+	const float TEST_RespawnDelay = 3.0f;					// [TODO] Delete - trigger a function at the end of the camera zoom out animation
 
 private:
 	// [TODO] Think about how we're getting the cosmetics of each player to then dress the clone appropriately
@@ -67,9 +65,10 @@ private:
 	const float MaxGameTime = 9999999999.9f;
 
 	// [TODO][IMPORTANT] 7.0f for testing only! Want 3.0f
-	const float WaitCountdown = 7.0f;					// Used for both game start and respawning ... any others?
+	const float WaitCountdown = 3.0f;					// Used for both game start and respawning ... any others?
 
-	const float TEST_HideTimeLimit = 15.0f;					// [TODO] DO NOT DO THIS! Want it customisable! DELETE!
+	// TEST_HideTimeLimit prev. value @ 15.0f
+	const float TEST_HideTimeLimit = 8.0f;					// [TODO] DO NOT DO THIS! Want it customisable! DELETE!
 	//const float RespawnTimeLimit = 3.0f;				// Consider including this (i.e. allow for a different starting hide time limit as to the one mid-game)
 
 	int JointWaitTimeRemaining = 0;

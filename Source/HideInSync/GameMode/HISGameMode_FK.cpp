@@ -19,6 +19,8 @@ void AHISGameMode_FK::PlayerFound(class AHISClone* FoundClone, class AHISPlayerC
 	if (FoundClone)
 	{
 		// [TODO] See bullet points...
+		// ... And will likely need to refactor this into the parent
+		// (and have the reset-routine put into this child class... Since game mode may not be respawning, but spectating instead)
 
 		// [TODO]
 		// Try move a lot of this to AHISGameMode::PlayerFound (parent)
@@ -31,7 +33,6 @@ void AHISGameMode_FK::PlayerFound(class AHISClone* FoundClone, class AHISPlayerC
 		//	o Freeze found player's seeker (disable input)
 		int FoundPlayerId = FoundClone->GetPlayerId();						// Do it like this? Or should I be passing HiderController to this function?
 		AHISPlayerController* FoundPlayerController = PlayersData[FoundPlayerId].GetController();
-		//FoundPlayerController->SetIgnorePlayerInput(true);				// No longer doing it like this -- DELETE
 		AHISCharacter* HISCharacter = Cast<AHISCharacter>(FoundPlayerController->GetPawn());
 		HISCharacter->bDisableInput = true;
 		
@@ -41,12 +42,8 @@ void AHISGameMode_FK::PlayerFound(class AHISClone* FoundClone, class AHISPlayerC
 		//	o Play FOUND animation and sound for seeker (and disappear, and destroy)
 		
 		//	o Respawn (after a few seconds?) the found player as a hider
-		//RequestRespawn(FoundPlayerId);										// Commented out for now, to test client SetIgnorePlayerInput
-		//PlayerRespawnIds.Add(FoundPlayerId);									// Delete - now using CurrentRespawnId
-		
-		//StartWaitTimer(TEST_RespawnDelay, &AHISGameMode_FK::RequestRespawn);	// Old way of doing it
-		FTimerHandle WaitTimer = PlayersData[FoundPlayerId].GetWaitTimer();
-		GetWorldTimerManager().SetTimer(WaitTimer, this, &AHISGameMode_FK::RequestRespawn, TEST_RespawnDelay);
+		FTimerHandle* WaitTimer = PlayersData[FoundPlayerId].GetWaitTimer();
+		GetWorldTimerManager().SetTimer(*WaitTimer, this, &AHISGameMode_FK::RequestRespawn, TEST_RespawnDelay);
 	}
 
 

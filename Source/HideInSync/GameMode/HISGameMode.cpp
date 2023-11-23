@@ -33,14 +33,12 @@ void AHISGameMode::Tick(float DeltaSeconds)
 
 	for (int i = 0; i < PlayersData.Num(); ++i)
 	{
-		if (PlayersData[i].IsPlayerHidden())
+		if (PlayersData[i].bIsHidden)
 		{
-			//UE_LOG(LogActor, Warning, TEXT("[AHISGameMode::Tick][%d] IsPlayerHidden()"), i);
 			UpdatePlayerHUDGameTimer(i);
 		}
 		else
 		{
-			//UE_LOG(LogActor, Warning, TEXT("[AHISGameMode::Tick][%d] player not hidden"), i);
 			UpdatePlayerHUDCountdown(i);
 		}
 	}
@@ -100,6 +98,7 @@ void AHISGameMode::JointHideTimerFinished()
 		AHISCharacter* HISCharacter = Cast<AHISCharacter>(PlayersData[i].GetController()->GetPawn());
 		HISCharacter->bDisableInput = true;
 		HideClone(i);
+		PlayersData[i].bIsHidden = true;
 	}
 
 	GetWorldTimerManager().SetTimer(JointWaitTimer, this, &AHISGameMode::JointSeekTimerFinished, WaitCountdown);
@@ -128,8 +127,8 @@ void AHISGameMode::IndividualHiderRespawnWaitFinished()
 	int PlayerId = GetPlayerIdByRespawnState(ERespawnState::RSE_RespawnHiderWait);
 	AHISCharacter* HISCharacter = Cast<AHISCharacter>(PlayersData[PlayerId].GetController()->GetPawn());
 	HISCharacter->bDisableInput = false;
-	FTimerHandle WaitTimer = PlayersData[PlayerId].GetWaitTimer();
-	GetWorldTimerManager().SetTimer(WaitTimer, this, &AHISGameMode::IndividualHideTimerFinished, TEST_HideTimeLimit);
+	FTimerHandle* WaitTimer = PlayersData[PlayerId].GetWaitTimer();
+	GetWorldTimerManager().SetTimer(*WaitTimer, this, &AHISGameMode::IndividualHideTimerFinished, TEST_HideTimeLimit);
 	PlayersData[PlayerId].RespawnState = ERespawnState::RSE_Hider;
 }
 
@@ -140,33 +139,19 @@ void AHISGameMode::IndividualHideTimerFinished()
 	AHISCharacter* HISCharacter = Cast<AHISCharacter>(PlayersData[PlayerId].GetController()->GetPawn());
 	HISCharacter->bDisableInput = true;
 	HideClone(PlayerId);
-	FTimerHandle WaitTimer = PlayersData[PlayerId].GetWaitTimer();
-	GetWorldTimerManager().SetTimer(WaitTimer, this, &AHISGameMode::IndividualSeekerRespawnWaitFinished, WaitCountdown);
+	FTimerHandle* WaitTimer = PlayersData[PlayerId].GetWaitTimer();
+	GetWorldTimerManager().SetTimer(*WaitTimer, this, &AHISGameMode::IndividualSeekerRespawnWaitFinished, WaitCountdown);
 	PlayersData[PlayerId].RespawnState = ERespawnState::RSE_RespawnSeekerWait;
 }
 
 void AHISGameMode::IndividualSeekerRespawnWaitFinished()
 {
 	int PlayerId = GetPlayerIdByRespawnState(ERespawnState::RSE_RespawnSeekerWait);
-	if (PlayerId == -1)
-	{
-		UE_LOG(LogActor, Warning, TEXT("[AHISGameMode::IndividualSeekerRespawnWaitFinished] PlayerId == -1"));
-		return;
-	}
-	AHISPlayerController* PlayerController = PlayersData[PlayerId].GetController();				// Says the crash happened on this line, but...
-	if (PlayerController == nullptr)
-	{
-		UE_LOG(LogActor, Warning, TEXT("[AHISGameMode::IndividualSeekerRespawnWaitFinished] PlayerController == nullptr"));
-		return;
-	}
-	AHISCharacter* HISCharacter = Cast<AHISCharacter>(PlayerController->GetPawn());				// I don't know if GetPawn would work at this point?
-	if (PlayerController == nullptr)
-	{
-		UE_LOG(LogActor, Warning, TEXT("[AHISGameMode::IndividualSeekerRespawnWaitFinished] HISCharacter == nullptr"));
-		return;
-	}
+	AHISPlayerController* PlayerController = PlayersData[PlayerId].GetController();
+	AHISCharacter* HISCharacter = Cast<AHISCharacter>(PlayerController->GetPawn());
 	HISCharacter->bDisableInput = false;
 	PlayersData[PlayerId].RespawnState = ERespawnState::RSE_NONE;
+	PlayersData[PlayerId].bIsHidden = true;
 }
 #pragma endregion
 
@@ -186,9 +171,8 @@ void AHISGameMode::SetSpawnLocation(int PlayerId, FVector Location, FRotator Rot
 
 void AHISGameMode::SetCloneHidingLocation(class AHISPlayerController* HiderController, FVector Location, FRotator Rotation)
 {
-	//UE_LOG(LogActor, Warning, TEXT("[AHISGameMode::SetCloneHidingLocation] ~hidingplayer~"));
 	int PlayerId = HiderController->GetPlayerId();
-
+	PlayersData[PlayerId].SetHidePosition(Location, Rotation);
 
 	// [TODO][IMPORTANT]
 	// Keep this function, but then separate into:
@@ -216,7 +200,7 @@ void AHISGameMode::SetCloneHidingLocationPreGame()
 	bool bAllPlayersHidden = true;
 	for (int i = 0; i < PlayersData.Num(); ++i)
 	{
-		if (PlayersData[i].IsPlayerHidden() == false)
+		if (PlayersData[i].bIsHidden == false)
 		{
 			bAllPlayersHidden = false;
 			break;
@@ -234,6 +218,7 @@ void AHISGameMode::SetCloneHidingLocationPreGame()
 			AHISCharacter* HISCharacter = Cast<AHISCharacter>(PlayersData[i].GetController()->GetPawn());
 			HISCharacter->bDisableInput = true;
 			HideClone(i);
+			PlayersData[i].bIsHidden = true;
 		}
 
 		GetWorldTimerManager().SetTimer(JointWaitTimer, this, &AHISGameMode::JointSeekTimerFinished, WaitCountdown);
@@ -242,45 +227,34 @@ void AHISGameMode::SetCloneHidingLocationPreGame()
 
 void AHISGameMode::SetCloneHidingLocationIndividual(int PlayerId)
 {
-	FTimerHandle WaitTimer = PlayersData[PlayerId].GetWaitTimer();
-	GetWorldTimerManager().ClearTimer(WaitTimer);
+	FTimerHandle* WaitTimer = PlayersData[PlayerId].GetWaitTimer();
+	GetWorldTimerManager().ClearTimer(*WaitTimer);
+	PlayersData[PlayerId].RespawnState = ERespawnState::RSE_RespawnSeekerWait;
 
 	// DISABLE INPUT -- Not required? Since immediately spawning a seeker (with input set to disabled from BeginPlay)
 	AHISCharacter* HISCharacter = Cast<AHISCharacter>(PlayersData[PlayerId].GetController()->GetPawn());
 	HISCharacter->bDisableInput = true;
 	HideClone(PlayerId);
 
-	GetWorldTimerManager().SetTimer(WaitTimer, this, &AHISGameMode::IndividualSeekerRespawnWaitFinished, WaitCountdown);
+	GetWorldTimerManager().SetTimer(*WaitTimer, this, &AHISGameMode::IndividualSeekerRespawnWaitFinished, WaitCountdown);
 }
 
 void AHISGameMode::HideClone(int PlayerId)
 {
-	//PlayerGameData PlayerData = PlayersData[PlayerId];
+	PlayerGameData* PlayerData = &PlayersData[PlayerId];
 
 	FVector PlayerLocation;
 	FRotator PlayerRotation;
-	//if (PlayerData.IsPlayerHidden())
-	if (PlayersData[PlayerId].IsPlayerHidden())
+	if (PlayerData->bIsHidden)
 	{
-		//PlayerLocation = PlayerData.GetHideLocation();
-		//PlayerRotation = PlayerData.GetHideRotation();
-		PlayerLocation = PlayersData[PlayerId].GetHideLocation();
-		PlayerRotation = PlayersData[PlayerId].GetHideRotation();
+		PlayerLocation = PlayerData->GetHideLocation();
+		PlayerRotation = PlayerData->GetHideRotation();
 	}
 	else
 	{
-		// [IMPORTANT]
-		// PLAYERS DATA DOES NOT CURRENTLY HAVE REFERENCE TO HISCharacterHider (or Seeker, or Clone)
-		// There is in fact no data in HISGameMode which currently points to any of that
-		// ... Should include in PlayerGameData? Or include separately?
-		//PlayerLocation = PlayerData.GetController()->GetCurrentLocation();					// Related to deletion within AHISCharacterHider::PossessedBy, these can stay here
-		//PlayerRotation = PlayerData.GetController()->GetCurrentRotation();					// (since unlikely able to store active character within PlayersData)
-		PlayerLocation = PlayersData[PlayerId].GetController()->GetCurrentLocation();					// Related to deletion within AHISCharacterHider::PossessedBy, these can stay here
-		PlayerRotation = PlayersData[PlayerId].GetController()->GetCurrentRotation();					// (since unlikely able to store active character within PlayersData)
+		PlayerLocation = PlayerData->GetController()->GetCurrentLocation();
+		PlayerRotation = PlayerData->GetController()->GetCurrentRotation();
 	}
-
-	//PlayerData.SetHidePosition(PlayerLocation, PlayerRotation);
-	PlayersData[PlayerId].SetHidePosition(PlayerLocation, PlayerRotation);
 
 	AActor* SpawnedClone = GetWorld()->SpawnActor(CloneClass, &PlayerLocation, &PlayerRotation);
 	AHISClone* Clone = Cast<AHISClone>(SpawnedClone);
@@ -293,16 +267,13 @@ void AHISGameMode::HideClone(int PlayerId)
 	int32 Index = FMath::RandRange(0, PlayerStarts.Num() - 1);
 	//RestartPlayerAtPlayerStart(HiderController, PlayerStarts[Index]);
 
-	//FVector PlayerStartLocation = PlayerData.GetSpawnLocation();
-	//FRotator PlayerStartRotation = PlayerData.GetSpawnRotation();
-	FVector PlayerStartLocation = PlayersData[PlayerId].GetSpawnLocation();
-	FRotator PlayerStartRotation = PlayersData[PlayerId].GetSpawnRotation();
+	FVector PlayerStartLocation = PlayerData->GetSpawnLocation();
+	FRotator PlayerStartRotation = PlayerData->GetSpawnRotation();
 
 	AActor* SpawnedSeeker = GetWorld()->SpawnActor(SeekerClass, &PlayerStartLocation, &PlayerStartRotation);
 	AHISCharacterSeeker* Seeker = Cast<AHISCharacterSeeker>(SpawnedSeeker);
 
-	//AHISPlayerController* CurrentController = PlayerData.GetController();
-	AHISPlayerController* CurrentController = PlayersData[PlayerId].GetController();
+	AHISPlayerController* CurrentController = PlayerData->GetController();
 	ACharacter* Character = CurrentController->GetCharacter();
 	CurrentController->Possess(Seeker);
 	Character->Destroy();
@@ -333,18 +304,11 @@ void AHISGameMode::PlayerFound(class AHISClone* FoundClone, class AHISPlayerCont
 {
 	int FoundId = FoundClone->GetPlayerId();
 	PlayersData[FoundId].RespawnState = ERespawnState::RSE_Found;
-	//AHISPlayerController* FoundController = Cast<AHISPlayerController>(PlayersData[FoundId].GetController());
-	//FoundController->Set
+	PlayersData[FoundId].bIsHidden = false;
 
 	// [TODO] Do not include 'FOUND' in base class?
 	// Will want different things to happen to FoundCharacter depending on game mode!
 	//FoundCharacter->Found();
-	
-	// [TODO][Important]
-	// Need to find a way of "Finding" the linked active player as well...
-	//		- Do via FoundCharacter->Found() ?
-	//		OR 
-	//		- Do via HISGameMode (e.g. lookup the ActivePlayer corresponding to this FoundCharacter, somehow, and send message like that)
 }
 #pragma endregion
 
@@ -356,10 +320,6 @@ void AHISGameMode::PlayerFound(class AHISClone* FoundClone, class AHISPlayerCont
 //void AHISGameMode::RequestRespawn(int FoundPlayerId)
 void AHISGameMode::RequestRespawn()
 {
-	//PlayersData[FoundPlayerId].SetPlayerFound();
-
-
-
 	// [TODO][IMPORTANT]
 	// 
 	// Should have played the dissolve animation by now
@@ -395,9 +355,9 @@ void AHISGameMode::RequestRespawn()
 
 	// Implement the below properly! Will need to add to the score, both for Hider and Seeker
 	// (will need to create either second array or a list of int pairs)
-	//PlayersData[FoundPlayerId].AddToFoundByPlayer(5);
+	//PlayersData[PlayerId].AddToFoundByPlayer(5);
+	
 	PlayersData[PlayerId].ResetSpawn();														// [TODO] Combine and rename these two?
-	PlayersData[PlayerId].ResetHide();
 
 	TArray<AActor*> PlayerStarts;
 	UGameplayStatics::GetAllActorsOfClass(this, APlayerStart::StaticClass(), PlayerStarts);
@@ -420,8 +380,8 @@ void AHISGameMode::RequestRespawn()
 	// Below temp here only for testing -- will still need to have timer to resume control, and set off new timer, etc.
 	Hider->bDisableInput = true;
 
-	FTimerHandle PlayerTimer = PlayersData[PlayerId].GetWaitTimer();
-	GetWorldTimerManager().SetTimer(PlayerTimer, this, &AHISGameMode::IndividualHiderRespawnWaitFinished, WaitCountdown);
+	FTimerHandle* PlayerTimer = PlayersData[PlayerId].GetWaitTimer();
+	GetWorldTimerManager().SetTimer(*PlayerTimer, this, &AHISGameMode::IndividualHiderRespawnWaitFinished, WaitCountdown);
 
 	PlayersData[PlayerId].RespawnState = ERespawnState::RSE_RespawnHiderWait;
 
@@ -472,29 +432,19 @@ void AHISGameMode::UpdateJointWaitTimer()
 		{
 			HISController->ClientUpdateHUDTimer(JointWaitTimeRemaining);
 		}
-		else
-		{
-			UE_LOG(LogActor, Warning, TEXT("[AHISGameMode::UpdateJointWaitTimer] HISController == nullptr <<< <<< <<< <<< <<<"));
-		}
 	}
 }
 
 void AHISGameMode::UpdatePlayerHUDCountdown(int PlayerId)
 {
-	FTimerHandle PlayerTimer = PlayersData[PlayerId].GetWaitTimer();
-	int SecondsRemaining = FMath::CeilToInt(GetWorldTimerManager().GetTimerRemaining(PlayerTimer));
-
-	//UE_LOG(LogActor, Warning, TEXT("[AHISGameMode::UpdatePlayerHUDCountdown] SecondsRemaining @ %d"), SecondsRemaining);
+	FTimerHandle* PlayerTimer = PlayersData[PlayerId].GetWaitTimer();
+	int SecondsRemaining = FMath::CeilToInt(GetWorldTimerManager().GetTimerRemaining(*PlayerTimer));
 
 	AHISPlayerController* HISController = PlayersData[PlayerId].GetController();
 	// [Q] Need to null check the controller?
 	if (HISController)
 	{
 		HISController->ClientUpdateHUDTimer(SecondsRemaining);
-	}
-	else
-	{
-		UE_LOG(LogActor, Warning, TEXT("[AHISGameMode::UpdatePlayerHUDCountdown] HISController == nullptr <<< <<< <<< <<< <<<"));
 	}
 }
 
@@ -506,17 +456,11 @@ void AHISGameMode::UpdatePlayerHUDGameTimer(int PlayerId)
 	{
 		HISController->ClientUpdateHUDTimer(CurrentGameTime);
 	}
-	else
-	{
-		UE_LOG(LogActor, Warning, TEXT("[AHISGameMode::UpdatePlayerHUDGameTimer] HISController == nullptr <<< <<< <<< <<< <<<"));
-	}
 }
 
 void AHISGameMode::CheckGameTimer()
 {
 	int ElapsedSeconds = FMath::FloorToInt(GetWorldTimerManager().GetTimerElapsed(GameTimer));
-
-	//UE_LOG(LogActor, Warning, TEXT("[AHISGameMode::CheckGameTimer] ElapsedSeconds @ %d /// CurrentGameTime @ %d"), ElapsedSeconds, CurrentGameTime);
 
 	// [TODO]
 	//if (ElapsedSeconds > GameTimeLimit)

@@ -20,6 +20,21 @@ AHISCharacterHider::AHISCharacterHider()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("ThirdPersonCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FollowCamera->bUsePawnControlRotation = false;
+	
+	// [TODO]
+	// 
+	// if IsLocallyControlled
+	// get all objects of type HISClone and HISCharacterSeeker
+	// set bOnlyOwnerSee or whatever it's called to TRUE
+	// 
+	// (if doing that, will I need to do the same but set to FALSE for HISCharacterSeeker constructor?)
+	//
+	// (Should move it to HISPlayerController ???)
+
+	if (IsLocallyControlled())
+	{
+
+	}
 }
 
 
