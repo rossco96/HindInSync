@@ -31,11 +31,16 @@ public:
 	// These functions *do* need to stay, but should not be used by HISCharacter (or children)
 	// -- currently used by HISGameMode (PlayersData)
 
+	void SetHUDScore(float Score);
+
 	UFUNCTION(Client, Reliable)
 	void ClientUpdateHUDTimer(int Seconds);
 
 	UFUNCTION(Client, Reliable)
 	void ClientSetFoundTextVisible(bool bIsVisible);
+
+	UFUNCTION(Client, Reliable)
+	void ClientInitHUDScores(int NumberOfPlayers);
 
 protected:
 	virtual void Tick(float DeltaTime) override;

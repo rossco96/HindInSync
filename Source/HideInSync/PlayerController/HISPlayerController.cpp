@@ -2,7 +2,9 @@
 
 
 #include "HISPlayerController.h"
+#include "Components/TextBlock.h"
 #include "GameFramework/Character.h"
+#include "HideInSync/HUD/Levels/CharacterOverlay.h"
 #include "HideInSync/HUD/Levels/HISHUD.h"
 #include "Net/UnrealNetwork.h"
 
@@ -60,6 +62,19 @@ void AHISPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 #pragma endregion
 
 
+#pragma region HUD
+void AHISPlayerController::SetHUDScore(float Score)
+{
+	HISHUD = (HISHUD == nullptr) ? Cast<AHISHUD>(GetHUD()) : HISHUD;
+	if (HISHUD && HISHUD->CharacterOverlay&& HISHUD->CharacterOverlay->ScoreAmountText)		// [TODO] Make any others update like this! Timer???
+	{
+		FString ScoreAmount = FString::Printf(TEXT("%d"), FMath::FloorToInt(Score));
+		HISHUD->CharacterOverlay->ScoreAmountText->SetText(FText::FromString(ScoreAmount));
+	}
+}
+#pragma endregion
+
+
 #pragma region Client RPC
 void AHISPlayerController::ClientUpdateHUDTimer_Implementation(int Seconds)
 {
@@ -96,6 +111,25 @@ void AHISPlayerController::ClientSetFoundTextVisible_Implementation(bool bIsVisi
 	else
 	{
 		UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::ClientSetFoundTextEnabled_Implementation] HISHUD is nullptr (NOT OKAY?)"));
+	}
+}
+
+void AHISPlayerController::ClientInitHUDScores_Implementation(int NumberOfPlayers)
+{
+	if (HISHUD)
+	{
+		if (HISHUD->CharacterOverlay)
+		{
+			HISHUD->CharacterOverlay->InitScorePanel(NumberOfPlayers);
+		}
+		else
+		{
+			UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::ClientInitHUDScores_Implementation] CharacterOverlay is nullptr (but this is okay?)"));
+		}
+	}
+	else
+	{
+		UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::ClientInitHUDScores_Implementation] HISHUD is nullptr (NOT OKAY?)"));
 	}
 }
 #pragma endregion

@@ -3,6 +3,7 @@
 
 #include "CharacterOverlay.h"
 #include "Components/TextBlock.h"
+#include "Components/UniformGridPanel.h"
 
 void UCharacterOverlay::UpdateTimer(int Seconds)
 {
@@ -18,6 +19,22 @@ void UCharacterOverlay::UpdateTimer(int Seconds)
 void UCharacterOverlay::SetFoundTextVisible(bool bIsVisible)
 {
 	ESlateVisibility TextVisibility = (bIsVisible) ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Hidden;
-	//FoundText->SetIsEnabled(bEnableText);
 	FoundText->SetVisibility(TextVisibility);
+}
+
+void UCharacterOverlay::InitScorePanel(int NumberOfOtherPlayers)
+{
+	for (int i = 0; i < 2; ++i)
+	{
+		for (int j = 0; j < NumberOfOtherPlayers; ++j)
+		{
+			ScorePanel->AddChildToUniformGrid(TextBlockClass, i, j);
+		}
+	}
+}
+
+void UCharacterOverlay::AddToScore(int PlayerId, bool bAreWeTheSeeker)
+{
+	int RowNumber = (bAreWeTheSeeker) ? 0 : 1;
+	//ScorePanel->
 }
