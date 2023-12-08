@@ -55,7 +55,7 @@ void AHISCharacterHider::HideClone()
 		FVector CloneLocation = GetTransform().GetLocation();
 		FRotator CloneRotation = GetTransform().GetRotation().Rotator();
 		AHISGameMode* HISGameMode = GetWorld()->GetAuthGameMode<AHISGameMode>();
-		HISGameMode->SetCloneHidingLocation(PlayerController, CloneLocation, CloneRotation);
+		HISGameMode->SetCloneHidingLocation(HISPlayerController, CloneLocation, CloneRotation);
 	}
 	else
 	{
@@ -124,11 +124,11 @@ void AHISCharacterHider::PossessedBy(AController* NewController)
 	AHISGameMode* HISGameMode = GetWorld()->GetAuthGameMode<AHISGameMode>();
 	if (HISGameMode)
 	{
-		if (PlayerController)
+		if (HISPlayerController)
 		{
-			int ControllerPlayerId = PlayerController->GetPlayerId();
-			//FVector Location = PlayerController->GetCurrentLocation();
-			//FRotator Rotation = PlayerController->GetCurrentRotation();
+			int ControllerPlayerId = HISPlayerController->GetPlayerId();
+			//FVector Location = HISPlayerController->GetCurrentLocation();
+			//FRotator Rotation = HISPlayerController->GetCurrentRotation();
 			FVector Location = GetTransform().GetLocation();
 			FRotator Rotation = GetTransform().GetRotation().Rotator();
 			HISGameMode->SetSpawnLocation(ControllerPlayerId, Location, Rotation);
@@ -142,6 +142,6 @@ void AHISCharacterHider::ServerHideButtonPressed_Implementation()
 	FVector CloneLocation = GetTransform().GetLocation();
 	FRotator CloneRotation = GetTransform().GetRotation().Rotator();
 	AHISGameMode* HISGameMode = GetWorld()->GetAuthGameMode<AHISGameMode>();
-	HISGameMode->SetCloneHidingLocation(PlayerController, CloneLocation, CloneRotation);
+	HISGameMode->SetCloneHidingLocation(HISPlayerController, CloneLocation, CloneRotation);
 }
 #pragma endregion

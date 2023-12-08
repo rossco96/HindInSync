@@ -36,7 +36,7 @@ void AHISCharacterSeeker::FindClone()
 		AHISGameMode* HISGameMode = GetWorld()->GetAuthGameMode<AHISGameMode>();
 		if (HISGameMode)
 		{
-			HISGameMode->PlayerFound(FoundClone, PlayerController);
+			HISGameMode->PlayerFound(FoundClone, HISPlayerController);
 		}
 	}
 	else
@@ -56,13 +56,13 @@ void AHISCharacterSeeker::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 
 void AHISCharacterSeeker::OnRep_FoundClone(AHISClone* LastClone)
 {
-	if (PlayerController == nullptr)
+	if (HISPlayerController == nullptr)
 	{
-		UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::SetFoundClone] PlayerController is nullptr -- MAJOR ERROR AT THIS POINT !!!!!"));
+		UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::SetFoundClone] HISPlayerController is nullptr -- MAJOR ERROR AT THIS POINT !!!!!"));
 		return;
 	}
 
-	if (FoundClone != nullptr && FoundClone->GetPlayerId() == PlayerController->GetPlayerId()) return;
+	if (FoundClone != nullptr && FoundClone->GetPlayerId() == HISPlayerController->GetPlayerId()) return;
 	
 	if (FoundClone)
 	{
@@ -79,18 +79,18 @@ void AHISCharacterSeeker::SetFoundClone(AHISClone* Clone)
 {
 	// [TODO][Important]
 	// Here:
-	//	o If a player hides at their own respawn location, this function is called and PlayerController is nullptr at this point
+	//	o If a player hides at their own respawn location, this function is called and HISPlayerController is nullptr at this point
 	// Some other bit of code:
 	//	o If a player hides at another player's respawn location, the outline will not show up (they will have to move away and come back to find them)
 
 	// Below is not ideal... See note above
-	if (PlayerController == nullptr)
+	if (HISPlayerController == nullptr)
 	{
-		UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::SetFoundClone] PlayerController is nullptr"));
+		UE_LOG(LogActor, Warning, TEXT("[AHISCharacterSeeker::SetFoundClone] HISPlayerController is nullptr"));
 		return;
 	}
 
-	if (Clone != nullptr && Clone->GetPlayerId() == PlayerController->GetPlayerId()) return;
+	if (Clone != nullptr && Clone->GetPlayerId() == HISPlayerController->GetPlayerId()) return;
 
 	if (IsLocallyControlled() && FoundClone)
 	{
@@ -111,7 +111,7 @@ void AHISCharacterSeeker::ServerFindButtonPressed_Implementation()
 	AHISGameMode* HISGameMode = GetWorld()->GetAuthGameMode<AHISGameMode>();
 	if (HISGameMode)
 	{
-		HISGameMode->PlayerFound(FoundClone, PlayerController);
+		HISGameMode->PlayerFound(FoundClone, HISPlayerController);
 	}
 }
 #pragma endregion
