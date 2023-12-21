@@ -41,6 +41,8 @@ private:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AHISClone> CloneClass;
 
+	TMap<int, TMap<int, int>> GameScore;				// [IMPORTANT][Q] Do we want this here? Rather than on each individual PlayerGameData?
+
 	FTimerHandle JointWaitTimer;
 	FTimerHandle GameTimer;
 

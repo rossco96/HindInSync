@@ -9,6 +9,7 @@
 #include "HideInSync/Character/HISCharacterSeeker.h"
 #include "HideInSync/Character/HISClone.h"
 #include "HideInSync/PlayerController/HISPlayerController.h"
+#include "HideInSync/PlayerState/HISPlayerState.h"
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 
@@ -64,6 +65,20 @@ void AHISGameMode::PostLogin(APlayerController* NewPlayer)
 
 	if (NumberOfPlayers == TEST_NumberOfPlayers)
 	{
+		for (int i = 0; i < NumberOfPlayers; ++i)
+		{
+			// INFORM ALL PLAYER CONTROLLERS THAT PLAYERS ARE LOADED IN
+			PlayersData[i].GetController()->TotalNumberOfPlayers = NumberOfPlayers;
+			PlayersData[i].GetController()->bAllPlayersLoadedIn = true;
+			// INIT SCORES MAP:
+			TMap<int, int> Score = TMap<int, int>();
+			for (int j = 0; j < NumberOfPlayers; ++j)
+			{
+				if (i == j) continue;
+				Score.Add(j, 0);
+			}
+			GameScore.Add(i, Score);
+		}
 		// START THE COUNTDOWN!
 		GetWorldTimerManager().SetTimer(JointWaitTimer, this, &AHISGameMode::LevelLoadCountdownFinished, WaitCountdown);
 	}
@@ -306,9 +321,32 @@ void AHISGameMode::PlayerFound(class AHISClone* FoundClone, class AHISPlayerCont
 	PlayersData[FoundId].RespawnState = ERespawnState::RSE_Found;
 	PlayersData[FoundId].bIsHidden = false;
 
+	AHISPlayerState* SeekerPlayerState = (SeekerController) ? Cast<AHISPlayerState>(SeekerController->PlayerState) : nullptr;
+	// [TODO][IMPORTANT] Must pass HiderController in this method!!!
+	//AHISPlayerState* HiderPlayerState = (HiderController) ? Cast<AHISPlayerState>(HiderController->PlayerState) : nullptr;
+
+	if (SeekerPlayerState)
+	{
+		SeekerPlayerState->AddToScore(1.0f);
+	}
+
 	// [TODO] Do not include 'FOUND' in base class?
 	// Will want different things to happen to FoundCharacter depending on game mode!
 	//FoundCharacter->Found();
+
+	int SeekerId = SeekerController->GetPlayerId();
+	UE_LOG(LogActor, Warning, TEXT("[HISGameMode::PlayerFound] SeekerId %d / FoundId %d"), SeekerId, FoundId);
+
+	GameScore[SeekerId][FoundId]++;
+
+	// Update Seeker HUD
+	int SeekerScoreSlot = (SeekerId > FoundId) ? FoundId : FoundId - 1;
+	SeekerController->ClientUpdateHUDScores(SeekerScoreSlot, GameScore[SeekerId][FoundId]);
+
+	// Update Hider HUD
+	int HiderScoreSlot = NumPlayers - 1;
+	HiderScoreSlot += (SeekerId > FoundId) ? FoundId : FoundId - 1;
+	PlayersData[FoundId].GetController()->ClientUpdateHUDScores(HiderScoreSlot, GameScore[SeekerId][FoundId]);
 }
 #pragma endregion
 
@@ -355,7 +393,6 @@ void AHISGameMode::RequestRespawn()
 
 	// Implement the below properly! Will need to add to the score, both for Hider and Seeker
 	// (will need to create either second array or a list of int pairs)
-	//PlayersData[PlayerId].AddToFoundByPlayer(5);
 	
 	PlayersData[PlayerId].ResetSpawn();														// [TODO] Combine and rename these two?
 

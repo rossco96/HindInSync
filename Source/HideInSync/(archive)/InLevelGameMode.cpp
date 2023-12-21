@@ -63,6 +63,6 @@ void AInLevelGameMode::SetWinConditions(TArray<WinCondition> Conditions)
 
 void AInLevelGameMode::FindPlayer(int SeekerId, int HiderId)
 {
-	PlayersData[SeekerId].AddToPlayerFound(HiderId);
-	PlayersData[HiderId].AddToFoundByPlayer(SeekerId);
+	//PlayersData[SeekerId].AddToPlayerFound(HiderId);
+	//PlayersData[HiderId].AddToFoundByPlayer(SeekerId);
 }

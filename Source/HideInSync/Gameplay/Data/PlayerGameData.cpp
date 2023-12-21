@@ -5,7 +5,7 @@
 #include "HideInSync/PlayerController/HISPlayerController.h"
 
 
-#pragma region Constructors & Init
+#pragma region Constructors
 PlayerGameData::PlayerGameData(class AHISPlayerController* Controller)
 {
 	HISPlayerController = Controller;
@@ -14,19 +14,7 @@ PlayerGameData::PlayerGameData(class AHISPlayerController* Controller)
 PlayerGameData::~PlayerGameData()
 {
 }
-
-
-// [TODO] Is there a way to not pass TotalPlayers? Get via InLevelGameMode? Or is this the easiest/cleanest solution?
-void PlayerGameData::InitFoundArrays(int TotalPlayers)
-{
-	for (int i = 0; i < TotalPlayers; ++i)
-	{
-		if (i == HISPlayerController->GetPlayerId()) continue;
-		PlayersFound.Add(i, 0);
-		FoundByPlayers.Add(i, 0);
-	}
-}
-#pragma endregion // Constructors & Init
+#pragma endregion // Constructors
 
 
 #pragma region Hide Position
@@ -57,27 +45,3 @@ void PlayerGameData::SetHidePosition(FVector Location, FRotator Rotation)
 	HideRotation = Rotation;
 }
 #pragma endregion
-
-
-#pragma region Found Array Functions
-int PlayerGameData::GetPlayerFoundAtIndex(int Id)
-{
-	return PlayersFound[Id];
-}
-
-int PlayerGameData::GetFoundByPlayerAtIndex(int Id)
-{
-	return FoundByPlayers[Id];
-}
-
-
-void PlayerGameData::AddToPlayerFound(int Id)
-{
-	PlayersFound[Id]++;
-}
-
-void PlayerGameData::AddToFoundByPlayer(int Id)
-{
-	FoundByPlayers[Id]++;
-}
-#pragma region // Found Array Functions

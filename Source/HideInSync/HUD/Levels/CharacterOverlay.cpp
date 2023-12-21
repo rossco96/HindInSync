@@ -4,6 +4,7 @@
 #include "CharacterOverlay.h"
 #include "Components/TextBlock.h"
 #include "Components/UniformGridPanel.h"
+#include "HideInSync/HUD/Levels/ScoreTextWidget.h"
 
 void UCharacterOverlay::UpdateTimer(int Seconds)
 {
@@ -22,19 +23,14 @@ void UCharacterOverlay::SetFoundTextVisible(bool bIsVisible)
 	FoundText->SetVisibility(TextVisibility);
 }
 
-void UCharacterOverlay::InitScorePanel(int NumberOfOtherPlayers)
+void UCharacterOverlay::AddTextToScorePanel(class UScoreTextWidget* ScoreText, int PositionX, int PositionY)
 {
-	for (int i = 0; i < 2; ++i)
-	{
-		for (int j = 0; j < NumberOfOtherPlayers; ++j)
-		{
-			ScorePanel->AddChildToUniformGrid(TextBlockClass, i, j);
-		}
-	}
+	ScorePanel->AddChildToUniformGrid(ScoreText, PositionX, PositionY);
 }
 
-void UCharacterOverlay::AddToScore(int PlayerId, bool bAreWeTheSeeker)
+void UCharacterOverlay::UpdateScore(int SlotNumber, int NewScore)
 {
-	int RowNumber = (bAreWeTheSeeker) ? 0 : 1;
-	//ScorePanel->
+	UWidget* ScorePanelChild = ScorePanel->GetChildAt(SlotNumber);
+	UScoreTextWidget* ScoreTextWidget = Cast<UScoreTextWidget>(ScorePanelChild);
+	ScoreTextWidget->UpdateScore(NewScore);
 }

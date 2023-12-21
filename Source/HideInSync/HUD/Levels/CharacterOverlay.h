@@ -18,8 +18,8 @@ public:
 	
 	void SetFoundTextVisible(bool bIsVisible);
 
-	void InitScorePanel(int NumberOfOtherPlayers);
-	void AddToScore(int PlayerId, bool bAreWeTheSeeker);
+	void AddTextToScorePanel(class UScoreTextWidget* ScoreText, int PositionX, int PositionY);
+	void UpdateScore(int SlotNumber, int NewScore);
 
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* ScoreAmountText;
@@ -27,18 +27,11 @@ public:
 private:
 	// [TODO] Move to public as well! Implement same way as ScoreText
 	UPROPERTY(meta = (BindWidget))
-	/*class*/ UTextBlock* GameTimer;
+	UTextBlock* GameTimer;
 
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* FoundText;
 
-	// [DELETE] Moved up to public
-	//UPROPERTY(meta = (BindWidget))					// [TODO] Create UTextBlock and uncomment this!
-	//UTextBlock* ScoreText;
-
 	UPROPERTY(meta = (BindWidget))
-	class UUniformGridPanel* ScorePanel;
-
-	UPROPERTY(EditAnywhere)
-	class UWidget* TextBlockClass;
+	class UUniformGridPanel* ScorePanel;				// [TODO] May need to make public for access by HISHUD?
 };

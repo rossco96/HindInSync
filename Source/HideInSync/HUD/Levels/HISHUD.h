@@ -16,11 +16,18 @@ class HIDEINSYNC_API AHISHUD : public AHUD
 public:
 	virtual void DrawHUD() override;						// Currently doing nothing, but included in the course
 
+	void InitScorePanel(int NumberOfPlayers);
+
 	UPROPERTY(EditAnywhere)
-	TSubclassOf<class UUserWidget> CharacterOverlayClass;
+	TSubclassOf<class UUserWidget> CharacterOverlayClass;	// Does this need to be public?
 
 	class UCharacterOverlay* CharacterOverlay;
+
 protected:
 	virtual void BeginPlay() override;
 	void AddCharacterOverlay();
+
+private:
+	UPROPERTY(EditAnywhere)
+	class TSubclassOf<UUserWidget> ScoreTextWidgetClass;
 };

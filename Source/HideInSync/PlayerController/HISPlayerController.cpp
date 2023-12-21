@@ -8,6 +8,8 @@
 #include "HideInSync/HUD/Levels/HISHUD.h"
 #include "Net/UnrealNetwork.h"
 
+
+
 // TEMP DEBUG ONLY BELOW
 FVector AHISPlayerController::GetCurrentLocation()
 {
@@ -42,14 +44,22 @@ void AHISPlayerController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (IsLocalPlayerController() == false) return;
+	if (bHUDScoresInitialised)
+	{
+		return;
+	}
 
-	if (bHasHUD == false)
+	// [NOTE][HACK?][14.12.2023]
+	if (IsLocalPlayerController() && bAllPlayersLoadedIn && TotalNumberOfPlayers != -1)		// Is the check for TotalNumberOfPlayers required? Use OnRep_TotalNumberOfPlayers() instead! Then no need for checking in Tick(), nor any need for bHUDScoresInitialised
 	{
 		HISHUD = Cast<AHISHUD>(GetHUD());
 		if (HISHUD)
 		{
-			bHasHUD = true;
+			if (HISHUD->CharacterOverlay)
+			{
+				HISHUD->InitScorePanel(TotalNumberOfPlayers);
+				bHUDScoresInitialised = true;
+			}
 		}
 	}
 }
@@ -58,6 +68,8 @@ void AHISPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AHISPlayerController, PlayerId);
+	DOREPLIFETIME(AHISPlayerController, bAllPlayersLoadedIn);
+	DOREPLIFETIME(AHISPlayerController, TotalNumberOfPlayers);
 }
 #pragma endregion
 
@@ -66,7 +78,7 @@ void AHISPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 void AHISPlayerController::SetHUDScore(float Score)
 {
 	HISHUD = (HISHUD == nullptr) ? Cast<AHISHUD>(GetHUD()) : HISHUD;
-	if (HISHUD && HISHUD->CharacterOverlay&& HISHUD->CharacterOverlay->ScoreAmountText)		// [TODO] Make any others update like this! Timer???
+	if (HISHUD && HISHUD->CharacterOverlay && HISHUD->CharacterOverlay->ScoreAmountText)		// [TODO] Make any others update like this! Timer???
 	{
 		FString ScoreAmount = FString::Printf(TEXT("%d"), FMath::FloorToInt(Score));
 		HISHUD->CharacterOverlay->ScoreAmountText->SetText(FText::FromString(ScoreAmount));
@@ -114,22 +126,11 @@ void AHISPlayerController::ClientSetFoundTextVisible_Implementation(bool bIsVisi
 	}
 }
 
-void AHISPlayerController::ClientInitHUDScores_Implementation(int NumberOfPlayers)
+void AHISPlayerController::ClientUpdateHUDScores_Implementation(int SlotNumber, int NewScore)
 {
-	if (HISHUD)
+	if (HISHUD && HISHUD->CharacterOverlay)
 	{
-		if (HISHUD->CharacterOverlay)
-		{
-			HISHUD->CharacterOverlay->InitScorePanel(NumberOfPlayers);
-		}
-		else
-		{
-			UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::ClientInitHUDScores_Implementation] CharacterOverlay is nullptr (but this is okay?)"));
-		}
-	}
-	else
-	{
-		UE_LOG(LogActor, Warning, TEXT("[AHISPlayerController::ClientInitHUDScores_Implementation] HISHUD is nullptr (NOT OKAY?)"));
+		HISHUD->CharacterOverlay->UpdateScore(SlotNumber, NewScore);
 	}
 }
 #pragma endregion

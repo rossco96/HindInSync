@@ -25,9 +25,6 @@ public:
 	PlayerGameData(class AHISPlayerController* Controller);
 	~PlayerGameData();
 
-	// [TODO] See note above function in .cpp
-	void InitFoundArrays(int TotalPlayers);
-
 	FORCEINLINE AHISPlayerController* GetController() { return HISPlayerController; }
 	FORCEINLINE FTimerHandle* GetWaitTimer() { return &WaitTimer; }
 
@@ -40,11 +37,6 @@ public:
 	FORCEINLINE FRotator GetHideRotation() { return HideRotation; }
 	void SetHidePosition(FVector Location, FRotator Rotation);
 
-	int GetPlayerFoundAtIndex(int Id);
-	int GetFoundByPlayerAtIndex(int Id);
-	void AddToPlayerFound(int Id);
-	void AddToFoundByPlayer(int Id);
-
 	ERespawnState RespawnState = ERespawnState::RSE_NONE;
 	bool bCheckRespawnState = false;									// [TODO] IMPLEMENT! Think this will be needed --> e.g. P2 is 10s out of 30s into the hiding state and then P3 enters the hiding state, so when iterating to find which player is in the hiding state will come up to P2 first (if not using this bool)
 	
@@ -54,14 +46,10 @@ private:
 	class AHISPlayerController* HISPlayerController;					// Do I need to forward declare 'class' here?
 	FTimerHandle WaitTimer;
 	
-	//bool bPlayerLoadedIn = false;										// Need this?
 	bool bSpawnPositionSet = false;
 
 	FVector SpawnLocation;
 	FRotator SpawnRotation;
 	FVector HideLocation;
 	FRotator HideRotation;
-
-	TMap<int, int> FoundByPlayers;
-	TMap<int, int> PlayersFound;
 };

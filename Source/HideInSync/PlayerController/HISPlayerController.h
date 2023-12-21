@@ -40,7 +40,12 @@ public:
 	void ClientSetFoundTextVisible(bool bIsVisible);
 
 	UFUNCTION(Client, Reliable)
-	void ClientInitHUDScores(int NumberOfPlayers);
+	void ClientUpdateHUDScores(int SlotNumber, int NewScore);
+	
+	UPROPERTY(Replicated)
+	bool bAllPlayersLoadedIn = false;							// Set from HISGameMode by server (then replicated to clients)
+	UPROPERTY(Replicated)
+	int TotalNumberOfPlayers = -1;
 
 protected:
 	virtual void Tick(float DeltaTime) override;
@@ -52,5 +57,6 @@ private:
 	int PlayerId;
 
 	class AHISHUD* HISHUD;
-	bool bHasHUD = false;
+
+	bool bHUDScoresInitialised = false;
 };
