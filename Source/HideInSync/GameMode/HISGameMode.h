@@ -59,7 +59,7 @@ private:
 	//	o How to get expected number of players
 	//	o Then if anyone drops before joining
 	//	o Then if anyone drops after loading into the level
-	const int TEST_NumberOfPlayers = 3;
+	const int TEST_NumberOfPlayers = 2;
 
 	// [TODO] Hack, not ideal, 'max' below returns a negative number??
 	//		std::numeric_limits<float>::max()
