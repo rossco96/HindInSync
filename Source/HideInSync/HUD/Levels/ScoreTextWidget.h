@@ -15,6 +15,7 @@ class HIDEINSYNC_API UScoreTextWidget : public UUserWidget
 	GENERATED_BODY()
 public:
 	void UpdateScore(int NewScore);
+	void SetTextFromString(FString String);
 private:
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* ScoreText;

@@ -23,7 +23,7 @@ void UCharacterOverlay::SetFoundTextVisible(bool bIsVisible)
 	FoundText->SetVisibility(TextVisibility);
 }
 
-void UCharacterOverlay::AddTextToScorePanel(class UScoreTextWidget* ScoreText, int PositionX, int PositionY)
+void UCharacterOverlay::AddTextToScorePanel(class UWidget* ScoreText, int PositionX, int PositionY)
 {
 	ScorePanel->AddChildToUniformGrid(ScoreText, PositionX, PositionY);
 }

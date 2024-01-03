@@ -340,13 +340,16 @@ void AHISGameMode::PlayerFound(class AHISClone* FoundClone, class AHISPlayerCont
 	GameScore[SeekerId][FoundId]++;
 
 	// Update Seeker HUD
-	int SeekerScoreSlot = (SeekerId > FoundId) ? FoundId : FoundId - 1;
+	int SeekerScoreSlot = NumPlayers;								// Starting point, ignoring row and column titles, minus one since there is no top left slot!
+	SeekerScoreSlot += (SeekerId > FoundId) ? FoundId : FoundId - 1;
+	UE_LOG(LogActor, Warning, TEXT("[HISGameMode::PlayerFound] SeekerScoreSlot %d"), SeekerScoreSlot);
 	SeekerController->ClientUpdateHUDScores(SeekerScoreSlot, GameScore[SeekerId][FoundId]);
 
 	// Update Hider HUD
-	int HiderScoreSlot = NumPlayers - 1;
-	HiderScoreSlot += (SeekerId > FoundId) ? FoundId : FoundId - 1;
-	PlayersData[FoundId].GetController()->ClientUpdateHUDScores(HiderScoreSlot, GameScore[SeekerId][FoundId]);
+	int HiderScoreSlot = 2 * NumPlayers;
+	HiderScoreSlot += (SeekerId > FoundId) ? SeekerId - 1 : SeekerId;
+	UE_LOG(LogActor, Warning, TEXT("[HISGameMode::PlayerFound] HiderScoreSlot %d"), HiderScoreSlot);
+	PlayersData[FoundId].GetController()->ClientUpdateHUDScores(HiderScoreSlot, GameScore[SeekerId][FoundId]);	// [TODO] This is hacky to access the controller like this... Pass it to the function!
 }
 #pragma endregion
 

@@ -18,7 +18,7 @@ public:
 	
 	void SetFoundTextVisible(bool bIsVisible);
 
-	void AddTextToScorePanel(class UScoreTextWidget* ScoreText, int PositionX, int PositionY);
+	void AddTextToScorePanel(class UWidget* ScoreText, int PositionX, int PositionY);
 	void UpdateScore(int SlotNumber, int NewScore);
 
 	UPROPERTY(meta = (BindWidget))
