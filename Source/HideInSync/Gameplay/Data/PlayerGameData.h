@@ -43,7 +43,7 @@ public:
 	bool bIsHidden = false;
 
 private:
-	class AHISPlayerController* HISPlayerController;					// Do I need to forward declare 'class' here?
+	AHISPlayerController* HISPlayerController;
 	FTimerHandle WaitTimer;
 	
 	bool bSpawnPositionSet = false;
