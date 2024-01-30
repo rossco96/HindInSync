@@ -69,20 +69,18 @@ void AHISClone::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetim
 void AHISClone::OnSphereOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	AHISCharacterSeeker* Character = Cast<AHISCharacterSeeker>(OtherActor);
-	FString ActorType = OtherActor->GetName();
 	if (Character != nullptr)
 	{
-		Character->SetFoundClone(this);
+		Character->SetCloneInRange(this, true);
 	}
 }
-
 
 void AHISClone::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	AHISCharacterSeeker* Character = Cast<AHISCharacterSeeker>(OtherActor);
 	if (Character)
 	{
-		Character->SetFoundClone(nullptr);
+		Character->SetCloneInRange(this, false);
 	}
 }
 #pragma endregion

@@ -15,12 +15,14 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 protected:
+	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 	class UCameraComponent* POVCamera;
 
+	void RaycastViewport();
 	void FindClone();
 	
 	UPROPERTY(ReplicatedUsing = OnRep_FoundClone)
@@ -32,6 +34,10 @@ private:
 	UFUNCTION(Server, Reliable)
 	void ServerFindButtonPressed();
 
+	UPROPERTY(Replicated)
+	int ClonesInRange = 0;
+	bool bFoundCloneVisible = false;
+
 public:
-	void SetFoundClone(AHISClone* Clone);
+	void SetCloneInRange(AHISClone* Clone, bool bIsInRange);
 };
