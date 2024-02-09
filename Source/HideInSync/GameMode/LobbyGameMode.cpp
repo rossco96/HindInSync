@@ -57,14 +57,22 @@ void ALobbyGameMode::Logout(AController* Exiting)
 
 
 #pragma region Blueprint Functions
-void ALobbyGameMode::StartGame()
+void ALobbyGameMode::StartGame(FString LevelPath, FString GameModePath)
 {
 	UWorld* World = GetWorld();
 	if (World)
 	{
 		bUseSeamlessTravel = true;
-		World->ServerTravel(FString("/Game/Maps/Test/HISMap?listen"));
+		
+		//World->ServerTravel(FString("/Game/Maps/Test/HISMap?listen"));
 		// '?listen' option above specifies that it'll be open as a listen server for clients to connect to
+		
+		// [TODO][IMPORTANT] Proof of concept -- won't always want listen server?
+		FString FullPath = LevelPath + "?listen?game=" + GameModePath;
+
+		UE_LOG(LogActor, Warning, TEXT("[asdf] %s"), *FullPath);
+
+		World->ServerTravel(FullPath);
 	}
 }
 #pragma endregion

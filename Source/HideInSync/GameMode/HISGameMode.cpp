@@ -139,33 +139,33 @@ void AHISGameMode::JointSeekTimerFinished()
 // [TODO][IMPORTANT] This will almost definitely be deleted -- want to have the respawn wait function triggered via FOUND animation!
 void AHISGameMode::IndividualHiderRespawnWaitFinished()
 {
-	int PlayerId = GetPlayerIdByRespawnState(ERespawnState::RSE_RespawnHiderWait);
+	int PlayerId = GetPlayerIdByRespawnState(ERespawnState::RespawnHiderWait);
 	AHISCharacter* HISCharacter = Cast<AHISCharacter>(PlayersData[PlayerId].GetController()->GetPawn());
 	HISCharacter->bDisableInput = false;
 	FTimerHandle* WaitTimer = PlayersData[PlayerId].GetWaitTimer();
 	GetWorldTimerManager().SetTimer(*WaitTimer, this, &AHISGameMode::IndividualHideTimerFinished, TEST_HideTimeLimit);
-	PlayersData[PlayerId].RespawnState = ERespawnState::RSE_Hider;
+	PlayersData[PlayerId].RespawnState = ERespawnState::Hider;
 }
 
 void AHISGameMode::IndividualHideTimerFinished()
 {
 	// DISABLE INPUT -- Not required? Since immediately spawning a seeker (with input set to disabled from BeginPlay)
-	int PlayerId = GetPlayerIdByRespawnState(ERespawnState::RSE_Hider);
+	int PlayerId = GetPlayerIdByRespawnState(ERespawnState::Hider);
 	AHISCharacter* HISCharacter = Cast<AHISCharacter>(PlayersData[PlayerId].GetController()->GetPawn());
 	HISCharacter->bDisableInput = true;
 	HideClone(PlayerId);
 	FTimerHandle* WaitTimer = PlayersData[PlayerId].GetWaitTimer();
 	GetWorldTimerManager().SetTimer(*WaitTimer, this, &AHISGameMode::IndividualSeekerRespawnWaitFinished, WaitCountdown);
-	PlayersData[PlayerId].RespawnState = ERespawnState::RSE_RespawnSeekerWait;
+	PlayersData[PlayerId].RespawnState = ERespawnState::RespawnSeekerWait;
 }
 
 void AHISGameMode::IndividualSeekerRespawnWaitFinished()
 {
-	int PlayerId = GetPlayerIdByRespawnState(ERespawnState::RSE_RespawnSeekerWait);
+	int PlayerId = GetPlayerIdByRespawnState(ERespawnState::RespawnSeekerWait);
 	AHISPlayerController* PlayerController = PlayersData[PlayerId].GetController();
 	AHISCharacter* HISCharacter = Cast<AHISCharacter>(PlayerController->GetPawn());
 	HISCharacter->bDisableInput = false;
-	PlayersData[PlayerId].RespawnState = ERespawnState::RSE_NONE;
+	PlayersData[PlayerId].RespawnState = ERespawnState::NONE;
 	PlayersData[PlayerId].bIsHidden = true;
 }
 #pragma endregion
@@ -244,7 +244,7 @@ void AHISGameMode::SetCloneHidingLocationIndividual(int PlayerId)
 {
 	FTimerHandle* WaitTimer = PlayersData[PlayerId].GetWaitTimer();
 	GetWorldTimerManager().ClearTimer(*WaitTimer);
-	PlayersData[PlayerId].RespawnState = ERespawnState::RSE_RespawnSeekerWait;
+	PlayersData[PlayerId].RespawnState = ERespawnState::RespawnSeekerWait;
 
 	// DISABLE INPUT -- Not required? Since immediately spawning a seeker (with input set to disabled from BeginPlay)
 	AHISCharacter* HISCharacter = Cast<AHISCharacter>(PlayersData[PlayerId].GetController()->GetPawn());
@@ -318,7 +318,7 @@ void AHISGameMode::HideClone(int PlayerId)
 void AHISGameMode::PlayerFound(class AHISClone* FoundClone, class AHISPlayerController* SeekerController)
 {
 	int FoundId = FoundClone->GetPlayerId();
-	PlayersData[FoundId].RespawnState = ERespawnState::RSE_Found;
+	PlayersData[FoundId].RespawnState = ERespawnState::Found;
 	PlayersData[FoundId].bIsHidden = false;
 
 	AHISPlayerState* SeekerPlayerState = (SeekerController) ? Cast<AHISPlayerState>(SeekerController->PlayerState) : nullptr;
@@ -392,7 +392,7 @@ void AHISGameMode::RequestRespawn()
 	// 
 	//		o SEEKER	Enables input.
 
-	int PlayerId = GetPlayerIdByRespawnState(ERespawnState::RSE_Found);
+	int PlayerId = GetPlayerIdByRespawnState(ERespawnState::Found);
 
 	// Implement the below properly! Will need to add to the score, both for Hider and Seeker
 	// (will need to create either second array or a list of int pairs)
@@ -423,7 +423,7 @@ void AHISGameMode::RequestRespawn()
 	FTimerHandle* PlayerTimer = PlayersData[PlayerId].GetWaitTimer();
 	GetWorldTimerManager().SetTimer(*PlayerTimer, this, &AHISGameMode::IndividualHiderRespawnWaitFinished, WaitCountdown);
 
-	PlayersData[PlayerId].RespawnState = ERespawnState::RSE_RespawnHiderWait;
+	PlayersData[PlayerId].RespawnState = ERespawnState::RespawnHiderWait;
 
 	// [TODO][IMPORTANT]
 	// Do not implement free-cam while waiting
@@ -438,7 +438,7 @@ void AHISGameMode::RequestRespawn()
 
 // [TODO][IMPORTANT]
 // This function is not safe!
-// Can have two or more players in e.g. RSE_Hider state
+// Can have two or more players in e.g. Hider state
 // (they have, while testing, 15s in that state. This would be even more in-game!)
 // Keep track of PlayerRespawnIds (TArray) in this script,
 // and have RespawnOrder number in PlayerGameData

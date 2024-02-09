@@ -6,6 +6,7 @@
 #include "GameFramework/GameMode.h"
 #include "LobbyGameMode.generated.h"
 
+
 /**
  * 
  */
@@ -23,5 +24,5 @@ private:
 	class ALobbyPlayerController* HostController;
 
 	UFUNCTION(BlueprintCallable)
-	void StartGame();
+	void StartGame(FString LevelPath, FString GameModePath);
 };
