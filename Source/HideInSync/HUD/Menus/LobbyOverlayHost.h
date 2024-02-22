@@ -26,7 +26,4 @@ private:
 	// (Make sure we show 'are you sure' prompt for both host and client)
 	//UPROPERTY(meta = (BindWidget))
 	//UButton* ButtonBack;
-
-	// Can just use blueprints for the below?
-	// ButtonMatchSettings, ButtonCharacterCustomisation, ButtonPlayerSettings
 };

@@ -8,6 +8,7 @@
 #include "HideInSync/Character/HISCharacterHider.h"
 #include "HideInSync/Character/HISCharacterSeeker.h"
 #include "HideInSync/Character/HISClone.h"
+#include "HideInSync/GameInstance/HISGameInstance.h"
 #include "HideInSync/PlayerController/HISPlayerController.h"
 #include "HideInSync/PlayerState/HISPlayerState.h"
 #include "Kismet/GameplayStatics.h"
@@ -18,13 +19,23 @@
 void AHISGameMode::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// [TODO] Store HISGameInstance rather than casting each time!
+	HISGameInstance = Cast<UHISGameInstance>(GetGameInstance());
+	GameTimeLimit = HISGameInstance->GetGameTimeLimit() * 60;			// Multiply by 60 as measured in minutes [TODO] Include the multiply in GetGameTimeLimit() ???
+	HideTimeLimit = HISGameInstance->GetHideTimeLimit();
+	RespawnWaitTime = HISGameInstance->GetRespawnTime();
+	
+	bIsGameTimeEndless = (GameTimeLimit == 0);
+	bIsHideTimeEndless = (HideTimeLimit == 0);
+	bNoRespawnTime = (RespawnWaitTime == 0);
 }
 
 void AHISGameMode::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	if (bIsJointWaitTimer)
+	if (bHasGameStarted == false)
 	{
 		UpdateJointWaitTimer();
 		return;
@@ -40,7 +51,15 @@ void AHISGameMode::Tick(float DeltaSeconds)
 		}
 		else
 		{
-			UpdatePlayerHUDCountdown(i);
+			// [TODO][Q] Do we need separate check for PlayersData[i].bHidingPlaceSet ?
+			// [TODO][Q] Should we have this bool check here or inside UpdatePlayerHUDCountdown() ?
+			// >>> Note the (current) duplicate call to UpdatePlayerHUDGameTimer() above !
+			// [TODO][Q] Do we want a count-up from zero, or just to keep showing the GameTimer ?
+			AHISCharacter* HISCharacter = Cast<AHISCharacter>(PlayersData[i].GetController()->GetPawn());
+			if (bIsHideTimeEndless && HISCharacter->bDisableInput == false)									// Feels hacky to check disabled input, but is exactly what I need and would require a duplicate bool doing exactly the same thing for the sake of a better name?
+				UpdatePlayerHUDGameTimer(i);
+			else
+				UpdatePlayerHUDCountdown(i);
 		}
 	}
 }
@@ -79,8 +98,9 @@ void AHISGameMode::PostLogin(APlayerController* NewPlayer)
 			}
 			GameScore.Add(i, Score);
 		}
+
 		// START THE COUNTDOWN!
-		GetWorldTimerManager().SetTimer(JointWaitTimer, this, &AHISGameMode::LevelLoadCountdownFinished, WaitCountdown);
+		GetWorldTimerManager().SetTimer(JointWaitTimer, this, &AHISGameMode::LevelLoadCountdownFinished, GameStartWaitTime);	// Do not use RespawnWaitTime here -- always want a countdown into the game!
 	}
 }
 #pragma endregion
@@ -92,14 +112,22 @@ void AHISGameMode::PostLogin(APlayerController* NewPlayer)
 // and then have the actual hide countdown begin
 void AHISGameMode::LevelLoadCountdownFinished()
 {
+	bHasInitialCountdownFinished = true;
+
 	// [TODO][Q] Instead of using PlayersData.Num() should be using (yet to be included) TotalPlayers? What if people drop out!?
 	for (int i = 0; i < PlayersData.Num(); ++i)
 	{
-		AHISCharacter* HISCharacter = Cast<AHISCharacter>(PlayersData[i].GetController()->GetPawn());
-		HISCharacter->bDisableInput = false;
+		if (PlayersData[i].GetController())						// Should be null checking all of these calls?
+		{
+			AHISCharacter* HISCharacter = Cast<AHISCharacter>(PlayersData[i].GetController()->GetPawn());
+			HISCharacter->bDisableInput = false;
+		}
 	}
 
-	GetWorldTimerManager().SetTimer(JointWaitTimer, this, &AHISGameMode::JointHideTimerFinished, TEST_HideTimeLimit);
+	if (bIsHideTimeEndless)
+		GetWorldTimerManager().SetTimer(JointWaitTimer, this, &AHISGameMode::JointHideTimerFinished, MaxGameTime);			// Previously TEST_HideTimeLimit
+	else
+		GetWorldTimerManager().SetTimer(JointWaitTimer, this, &AHISGameMode::JointHideTimerFinished, HideTimeLimit);		// Previously TEST_HideTimeLimit
 }
 
 void AHISGameMode::JointHideTimerFinished()
@@ -116,7 +144,16 @@ void AHISGameMode::JointHideTimerFinished()
 		PlayersData[i].bIsHidden = true;
 	}
 
-	GetWorldTimerManager().SetTimer(JointWaitTimer, this, &AHISGameMode::JointSeekTimerFinished, WaitCountdown);
+
+	if (bNoRespawnTime)
+	{
+		JointSeekTimerFinished();
+	}
+	else
+	{
+		bIsCountingDownFirstSeek = true;
+		GetWorldTimerManager().SetTimer(JointWaitTimer, this, &AHISGameMode::JointSeekTimerFinished, RespawnWaitTime);		// Prevoiusly WaitCountdown
+	}
 }
 
 void AHISGameMode::JointSeekTimerFinished()
@@ -128,9 +165,13 @@ void AHISGameMode::JointSeekTimerFinished()
 		HISCharacter->bDisableInput = false;
 	}
 
-	bIsJointWaitTimer = false;													// Are these bools
-	bHasGameStarted = true;														// two of the same?
-	GetWorldTimerManager().SetTimer(GameTimer, MaxGameTime, false);
+	bIsCountingDownFirstSeek = false;
+	bHasGameStarted = true;
+
+	if (bIsGameTimeEndless)
+		GetWorldTimerManager().SetTimer(GameTimer, MaxGameTime, false);
+	else
+		GetWorldTimerManager().SetTimer(GameTimer, GameTimeLimit, false);
 }
 #pragma endregion
 
@@ -143,8 +184,13 @@ void AHISGameMode::IndividualHiderRespawnWaitFinished()
 	AHISCharacter* HISCharacter = Cast<AHISCharacter>(PlayersData[PlayerId].GetController()->GetPawn());
 	HISCharacter->bDisableInput = false;
 	FTimerHandle* WaitTimer = PlayersData[PlayerId].GetWaitTimer();
-	GetWorldTimerManager().SetTimer(*WaitTimer, this, &AHISGameMode::IndividualHideTimerFinished, TEST_HideTimeLimit);
+	
 	PlayersData[PlayerId].RespawnState = ERespawnState::Hider;
+
+	if (bIsHideTimeEndless)
+		GetWorldTimerManager().SetTimer(*WaitTimer, this, &AHISGameMode::IndividualHideTimerFinished, MaxGameTime);			// Previously TEST_HideTimeLimit
+	else
+		GetWorldTimerManager().SetTimer(*WaitTimer, this, &AHISGameMode::IndividualHideTimerFinished, HideTimeLimit);		// Previously TEST_HideTimeLimit
 }
 
 void AHISGameMode::IndividualHideTimerFinished()
@@ -155,8 +201,13 @@ void AHISGameMode::IndividualHideTimerFinished()
 	HISCharacter->bDisableInput = true;
 	HideClone(PlayerId);
 	FTimerHandle* WaitTimer = PlayersData[PlayerId].GetWaitTimer();
-	GetWorldTimerManager().SetTimer(*WaitTimer, this, &AHISGameMode::IndividualSeekerRespawnWaitFinished, WaitCountdown);
+
 	PlayersData[PlayerId].RespawnState = ERespawnState::RespawnSeekerWait;
+
+	if (bNoRespawnTime)
+		IndividualSeekerRespawnWaitFinished();
+	else
+		GetWorldTimerManager().SetTimer(*WaitTimer, this, &AHISGameMode::IndividualSeekerRespawnWaitFinished, RespawnWaitTime);	// Previously WaitCountdown
 }
 
 void AHISGameMode::IndividualSeekerRespawnWaitFinished()
@@ -212,17 +263,18 @@ void AHISGameMode::SetCloneHidingLocationPreGame()
 	// ... And delete Hider, and disable input
 	// (unless for free-cam, but like for the Hider controller... Though if deleted I guess that doesn't really matter)
 
-	bool bAllPlayersHidden = true;
+	bool bAllHidingPlacesSet = true;
 	for (int i = 0; i < PlayersData.Num(); ++i)
 	{
-		if (PlayersData[i].bIsHidden == false)
+		if (PlayersData[i].bHidingPlaceSet == false)
 		{
-			bAllPlayersHidden = false;
+			UE_LOG(LogActor, Warning, TEXT("NOT HIDDEN >>>>> %d"), i);
+			bAllHidingPlacesSet = false;
 			break;
 		}
 	}
 
-	if (bAllPlayersHidden)
+	if (bAllHidingPlacesSet)
 	{
 		GetWorldTimerManager().ClearTimer(JointWaitTimer);
 
@@ -236,7 +288,12 @@ void AHISGameMode::SetCloneHidingLocationPreGame()
 			PlayersData[i].bIsHidden = true;
 		}
 
-		GetWorldTimerManager().SetTimer(JointWaitTimer, this, &AHISGameMode::JointSeekTimerFinished, WaitCountdown);
+		bIsCountingDownFirstSeek = true;
+
+		if (bNoRespawnTime)
+			JointSeekTimerFinished();
+		else
+			GetWorldTimerManager().SetTimer(JointWaitTimer, this, &AHISGameMode::JointSeekTimerFinished, RespawnWaitTime);		// Previously WaitCountdown
 	}
 }
 
@@ -251,7 +308,10 @@ void AHISGameMode::SetCloneHidingLocationIndividual(int PlayerId)
 	HISCharacter->bDisableInput = true;
 	HideClone(PlayerId);
 
-	GetWorldTimerManager().SetTimer(*WaitTimer, this, &AHISGameMode::IndividualSeekerRespawnWaitFinished, WaitCountdown);
+	if (bNoRespawnTime)
+		IndividualSeekerRespawnWaitFinished();
+	else
+		GetWorldTimerManager().SetTimer(*WaitTimer, this, &AHISGameMode::IndividualSeekerRespawnWaitFinished, RespawnWaitTime);	// Previously WaitCountdown
 }
 
 void AHISGameMode::HideClone(int PlayerId)
@@ -260,7 +320,7 @@ void AHISGameMode::HideClone(int PlayerId)
 
 	FVector PlayerLocation;
 	FRotator PlayerRotation;
-	if (PlayerData->bIsHidden)
+	if (PlayerData->bHidingPlaceSet)
 	{
 		PlayerLocation = PlayerData->GetHideLocation();
 		PlayerRotation = PlayerData->GetHideRotation();
@@ -269,6 +329,7 @@ void AHISGameMode::HideClone(int PlayerId)
 	{
 		PlayerLocation = PlayerData->GetController()->GetCurrentLocation();
 		PlayerRotation = PlayerData->GetController()->GetCurrentRotation();
+		PlayerData->bHidingPlaceSet = true;
 	}
 
 	AActor* SpawnedClone = GetWorld()->SpawnActor(CloneClass, &PlayerLocation, &PlayerRotation);
@@ -318,7 +379,10 @@ void AHISGameMode::HideClone(int PlayerId)
 void AHISGameMode::PlayerFound(class AHISClone* FoundClone, class AHISPlayerController* SeekerController)
 {
 	int FoundId = FoundClone->GetPlayerId();
+	
+	// [TODO] Move this into a "ResetHidingData()" function within PlayerGameData ???
 	PlayersData[FoundId].RespawnState = ERespawnState::Found;
+	PlayersData[FoundId].bHidingPlaceSet = false;
 	PlayersData[FoundId].bIsHidden = false;
 
 	AHISPlayerState* SeekerPlayerState = (SeekerController) ? Cast<AHISPlayerState>(SeekerController->PlayerState) : nullptr;
@@ -421,9 +485,12 @@ void AHISGameMode::RequestRespawn()
 	Hider->bDisableInput = true;
 
 	FTimerHandle* PlayerTimer = PlayersData[PlayerId].GetWaitTimer();
-	GetWorldTimerManager().SetTimer(*PlayerTimer, this, &AHISGameMode::IndividualHiderRespawnWaitFinished, WaitCountdown);
-
 	PlayersData[PlayerId].RespawnState = ERespawnState::RespawnHiderWait;
+
+	if (bNoRespawnTime)
+		IndividualHiderRespawnWaitFinished();
+	else
+		GetWorldTimerManager().SetTimer(*PlayerTimer, this, &AHISGameMode::IndividualHiderRespawnWaitFinished, RespawnWaitTime);	// Previously WaitCountdown
 
 	// [TODO][IMPORTANT]
 	// Do not implement free-cam while waiting
@@ -461,7 +528,41 @@ int AHISGameMode::GetPlayerIdByRespawnState(ERespawnState RespawnState)
 #pragma region Update Timers
 void AHISGameMode::UpdateJointWaitTimer()
 {
-	int SecondsRemaining = FMath::CeilToInt(GetWorldTimerManager().GetTimerRemaining(JointWaitTimer));
+	/*
+	if (bIsHideTimeEndless)
+	{
+		UE_LOG(LogActor, Warning, TEXT("bIsHideTimeEndless -- TRUE"));
+	}
+	else
+	{
+		UE_LOG(LogActor, Warning, TEXT("bIsHideTimeEndless -- false"));
+	}
+
+	if (bHasInitialCountdownFinished)
+	{
+		UE_LOG(LogActor, Warning, TEXT("bHasInitialCountdownFinished -- TRUE"));
+	}
+	else
+	{
+		UE_LOG(LogActor, Warning, TEXT("bHasInitialCountdownFinished -- false"));
+	}
+
+	if (bIsCountingDownFirstSeek)
+	{
+		UE_LOG(LogActor, Warning, TEXT("bIsCountingDownFirstSeek -- TRUE"));
+	}
+	else
+	{
+		UE_LOG(LogActor, Warning, TEXT("bIsCountingDownFirstSeek -- false"));
+	}
+	//*/
+
+	// [TODO] If this works, tidy it up PLEASE --- WHY DOESN'T THIS WORK?!
+	float Time = (bIsHideTimeEndless == false || bHasInitialCountdownFinished == false || bIsCountingDownFirstSeek)
+		? GetWorldTimerManager().GetTimerRemaining(JointWaitTimer)
+		: GetWorldTimerManager().GetTimerElapsed(JointWaitTimer);
+
+	int SecondsRemaining = FMath::CeilToInt(Time);														// [TODO][Q] CeilToInt or FloorToInt ???
 	if (SecondsRemaining == JointWaitTimeRemaining) return;
 
 	JointWaitTimeRemaining = SecondsRemaining;
@@ -478,7 +579,7 @@ void AHISGameMode::UpdateJointWaitTimer()
 void AHISGameMode::UpdatePlayerHUDCountdown(int PlayerId)
 {
 	FTimerHandle* PlayerTimer = PlayersData[PlayerId].GetWaitTimer();
-	int SecondsRemaining = FMath::CeilToInt(GetWorldTimerManager().GetTimerRemaining(*PlayerTimer));
+	int SecondsRemaining = FMath::CeilToInt(GetWorldTimerManager().GetTimerRemaining(*PlayerTimer));				// [TODO][Q] CeilToInt or FloorToInt ???
 
 	AHISPlayerController* HISController = PlayersData[PlayerId].GetController();
 	// [Q] Need to null check the controller?
@@ -500,10 +601,13 @@ void AHISGameMode::UpdatePlayerHUDGameTimer(int PlayerId)
 
 void AHISGameMode::CheckGameTimer()
 {
-	int ElapsedSeconds = FMath::FloorToInt(GetWorldTimerManager().GetTimerElapsed(GameTimer));
+	float Time = (bIsGameTimeEndless)
+		? GetWorldTimerManager().GetTimerElapsed(GameTimer)
+		: GetWorldTimerManager().GetTimerRemaining(GameTimer);
+	int ElapsedSeconds = FMath::FloorToInt(Time);														// [TODO][Q] CeilToInt or FloorToInt ???
 
 	// [TODO]
-	//if (ElapsedSeconds > GameTimeLimit)
+	//if (bIsGameEndless == false && ElapsedSeconds > GameTimeLimit)
 	//{
 	//	EndGame();
 	//}

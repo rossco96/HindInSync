@@ -31,7 +31,9 @@ protected:
 	
 	TMap<int, PlayerGameData> PlayersData;
 
-	const float TEST_RespawnDelay = 3.0f;					// [TODO] Delete - trigger a function at the end of the camera zoom out animation
+	// [TODO] Delete - trigger a function at the end of the camera zoom out animation
+	// --> Currently used in children (HISGameMode_FK) and NOT the base
+	const float TEST_RespawnDelay = 3.0f;
 
 private:
 	// [TODO] Think about how we're getting the cosmetics of each player to then dress the clone appropriately
@@ -42,18 +44,27 @@ private:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AHISClone> CloneClass;
 
+	class UHISGameInstance* HISGameInstance;
+	int32 GameTimeLimit;
+	int32 HideTimeLimit;
+	int32 RespawnWaitTime;
+
 	TMap<int, TMap<int, int>> GameScore;				// [IMPORTANT][Q] Do we want this here? Rather than on each individual PlayerGameData?
 
 	FTimerHandle JointWaitTimer;
 	FTimerHandle GameTimer;
 
+	bool bHasInitialCountdownFinished = false;			// This feels a bit hacky..
+	bool bIsCountingDownFirstSeek = false;				// .. And adding this feels even worse
 	bool bHasGameStarted = false;
 
-	bool bIsJointWaitTimer = true;						// Used at the very start (and possibly very end) of the match
 	void UpdateJointWaitTimer();
 	void UpdatePlayerHUDCountdown(int PlayerId);
 	void UpdatePlayerHUDGameTimer(int PlayerId);
 	void CheckGameTimer();
+	bool bIsGameTimeEndless = false;
+	bool bIsHideTimeEndless = false;
+	bool bNoRespawnTime = true;
 	
 	// [TEST] Do not do like this!!
 	// Need to consider:
@@ -67,11 +78,9 @@ private:
 	// (below is ~317 years, for anyone interested)
 	const float MaxGameTime = 9999999999.9f;
 
-	// [TODO][IMPORTANT] 7.0f for testing only! Want 3.0f
-	const float WaitCountdown = 3.0f;					// Used for both game start and respawning ... any others?
+	const float GameStartWaitTime = 5.0f;				// Used for both game start ONLY
 
-	// TEST_HideTimeLimit prev. value @ 15.0f
-	const float TEST_HideTimeLimit = 8.0f;					// [TODO] DO NOT DO THIS! Want it customisable! DELETE!
+	//const float TEST_HideTimeLimit = 8.0f;			// [TODO] DO NOT DO THIS! Want it customisable! DELETE!
 	//const float RespawnTimeLimit = 3.0f;				// Consider including this (i.e. allow for a different starting hide time limit as to the one mid-game)
 
 	int JointWaitTimeRemaining = 0;

@@ -29,6 +29,7 @@ public:
 	ERespawnState RespawnState = ERespawnState::NONE;
 	bool bCheckRespawnState = false;									// [TODO] IMPLEMENT! Think this will be needed --> e.g. P2 is 10s out of 30s into the hiding state and then P3 enters the hiding state, so when iterating to find which player is in the hiding state will come up to P2 first (if not using this bool)
 	
+	bool bHidingPlaceSet = false;
 	bool bIsHidden = false;
 
 private:

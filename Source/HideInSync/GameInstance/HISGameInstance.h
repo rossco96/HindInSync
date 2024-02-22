@@ -17,25 +17,39 @@ class HIDEINSYNC_API UHISGameInstance : public UGameInstance
 
 public:
 	UFUNCTION(BlueprintCallable)
-	FString GetGameModePath();
+	FORCEINLINE FString GetGameModePath() { return GameModeFilePath + GameMode; }
 	UFUNCTION(BlueprintCallable)
-	FORCEINLINE void SetGameMode(FString Mode) { GameMode = Mode; UE_LOG(LogActor, Warning, TEXT(">>>>> GameMode SET (%s)"), *Mode); }
+	FORCEINLINE void SetGameMode(FString Mode) { GameMode = Mode; }
+
+	// [TODO][TEST] Once TEST map is no longer being used, can compact GetLevelPath() so it's the same as GetGameModePath()
+	// --> And be sure to amend LevelMapFilePath to include "Levels/"
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE FString GetLevelPath() { if (LevelName == "TEST") { return LevelMapFilePath + "Test/HISMap"; } else { return LevelMapFilePath + "Levels/" + LevelName; } }
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE void SetLevelName(FString Level) { LevelName = Level; }
+	
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE int32 GetGameTimeLimit() { return GameTimeLimit; }
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE void SetGameTimeLimit(int32 Time) { GameTimeLimit = Time; }
 
 	UFUNCTION(BlueprintCallable)
-	FString GetLevelPath();
+	FORCEINLINE int32 GetHideTimeLimit() { return HideTimeLimit; }
 	UFUNCTION(BlueprintCallable)
-	FORCEINLINE void SetLevelName(FString Level) { LevelName = Level; UE_LOG(LogActor, Warning, TEXT(">>>>> LevelName SET (%s)"), *Level); }
+	FORCEINLINE void SetHideTimeLimit(int32 Time) { HideTimeLimit = Time; }
 
-	FORCEINLINE int16 GetTimeLimit() { return TimeLimit; }
-	FORCEINLINE int16 GetRespawnTime() { return RespawnTime; }
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE int32 GetRespawnTime() { return RespawnTime; }
+	UFUNCTION(BlueprintCallable)
+	FORCEINLINE void SetRespawnTime(int32 Time) { RespawnTime = Time; }
 	
 private:
-	UPROPERTY(EditAnywhere)
-	FString GameMode;							//EGameMode GameMode;
-	UPROPERTY(EditAnywhere)
-	FString LevelName;							//ELevelName LevelName;
-	UPROPERTY(EditAnywhere)
-	int16 TimeLimit;
-	UPROPERTY(EditAnywhere)
-	int16 RespawnTime;
+	FString GameMode;
+	FString LevelName;
+	int32 GameTimeLimit;
+	int32 HideTimeLimit;
+	int32 RespawnTime;
+
+	const FString GameModeFilePath = "/Game/Blueprints/GameMode/BP_HISGameMode_";
+	const FString LevelMapFilePath = "/Game/Maps/";
 };

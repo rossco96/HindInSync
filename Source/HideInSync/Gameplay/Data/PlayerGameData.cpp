@@ -43,5 +43,6 @@ void PlayerGameData::SetHidePosition(FVector Location, FRotator Rotation)
 	UE_LOG(LogActor, Warning, TEXT("[PlayerGameData::SetHidePosition] ~~~HIDINGPLAYER~~~"));
 	HideLocation = Location;
 	HideRotation = Rotation;
+	bHidingPlaceSet = true;
 }
 #pragma endregion
