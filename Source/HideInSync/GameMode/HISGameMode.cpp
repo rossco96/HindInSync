@@ -528,35 +528,6 @@ int AHISGameMode::GetPlayerIdByRespawnState(ERespawnState RespawnState)
 #pragma region Update Timers
 void AHISGameMode::UpdateJointWaitTimer()
 {
-	/*
-	if (bIsHideTimeEndless)
-	{
-		UE_LOG(LogActor, Warning, TEXT("bIsHideTimeEndless -- TRUE"));
-	}
-	else
-	{
-		UE_LOG(LogActor, Warning, TEXT("bIsHideTimeEndless -- false"));
-	}
-
-	if (bHasInitialCountdownFinished)
-	{
-		UE_LOG(LogActor, Warning, TEXT("bHasInitialCountdownFinished -- TRUE"));
-	}
-	else
-	{
-		UE_LOG(LogActor, Warning, TEXT("bHasInitialCountdownFinished -- false"));
-	}
-
-	if (bIsCountingDownFirstSeek)
-	{
-		UE_LOG(LogActor, Warning, TEXT("bIsCountingDownFirstSeek -- TRUE"));
-	}
-	else
-	{
-		UE_LOG(LogActor, Warning, TEXT("bIsCountingDownFirstSeek -- false"));
-	}
-	//*/
-
 	// [TODO] If this works, tidy it up PLEASE --- WHY DOESN'T THIS WORK?!
 	float Time = (bIsHideTimeEndless == false || bHasInitialCountdownFinished == false || bIsCountingDownFirstSeek)
 		? GetWorldTimerManager().GetTimerRemaining(JointWaitTimer)
