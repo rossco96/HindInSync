@@ -71,7 +71,7 @@ enum class ERespawnWait : uint8
 
 
 #pragma region STATES
-// Respawn Enum below: Need to keep track of which stage of respawn each player is moving onto
+// RespawnState Enum below: Need to keep track of which stage of respawn each player is moving onto
 UENUM()
 enum class ERespawnState : uint8
 {
@@ -80,6 +80,15 @@ enum class ERespawnState : uint8
 	Hider,
 	RespawnSeekerWait,								// [TODO][IMPORTANT] (see above)
 	NONE
+};
+
+// TimerLabelState Enum below: The text indicating what the timer is representing
+UENUM()
+enum class ETimerLabelState : uint8
+{
+	WAIT,
+	HIDE,
+	SEEK
 };
 #pragma endregion
 

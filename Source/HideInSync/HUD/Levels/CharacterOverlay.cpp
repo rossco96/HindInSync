@@ -6,6 +6,15 @@
 #include "Components/UniformGridPanel.h"
 #include "HideInSync/HUD/Levels/ScoreTextWidget.h"
 
+void UCharacterOverlay::UpdateTimerLabel(FString Label)
+{
+	if (GameTimerLabel)
+	{
+		FText LabelText = FText::FromString(Label);
+		GameTimerLabel->SetText(LabelText);
+	}
+}
+
 void UCharacterOverlay::UpdateTimer(int Seconds)
 {
 	if (GameTimer)

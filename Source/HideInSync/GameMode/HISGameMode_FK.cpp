@@ -35,6 +35,8 @@ void AHISGameMode_FK::PlayerFound(class AHISClone* FoundClone, class AHISPlayerC
 		AHISPlayerController* FoundPlayerController = PlayersData[FoundPlayerId].GetController();
 		AHISCharacter* HISCharacter = Cast<AHISCharacter>(FoundPlayerController->GetPawn());
 		HISCharacter->bDisableInput = true;
+
+		FoundPlayerController->ClientUpdateHUDTimerLabel(ETimerLabelState::WAIT);
 		
 		//	o Zoom out from seeker (move first person camera to third person) and show FOUND text
 		FoundPlayerController->ClientSetFoundTextVisible(true);

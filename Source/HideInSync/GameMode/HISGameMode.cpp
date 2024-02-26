@@ -117,10 +117,12 @@ void AHISGameMode::LevelLoadCountdownFinished()
 	// [TODO][Q] Instead of using PlayersData.Num() should be using (yet to be included) TotalPlayers? What if people drop out!?
 	for (int i = 0; i < PlayersData.Num(); ++i)
 	{
-		if (PlayersData[i].GetController())						// Should be null checking all of these calls?
+		AHISPlayerController* HISController = PlayersData[i].GetController();
+		if (HISController)														// Should be null checking all of these calls?
 		{
-			AHISCharacter* HISCharacter = Cast<AHISCharacter>(PlayersData[i].GetController()->GetPawn());
+			AHISCharacter* HISCharacter = Cast<AHISCharacter>(HISController->GetPawn());
 			HISCharacter->bDisableInput = false;
+			HISController->ClientUpdateHUDTimerLabel(ETimerLabelState::HIDE);
 		}
 	}
 
@@ -137,11 +139,16 @@ void AHISGameMode::JointHideTimerFinished()
 	// [TODO] Instead of using PlayersData.Num() should be using (yet to be included) TotalPlayers?
 	for (int i = 0; i < PlayersData.Num(); ++i)
 	{
+		AHISPlayerController* HISController = PlayersData[i].GetController();
 		// DISABLE INPUT -- Not required? Since immediately spawning a seeker (with input set to disabled from BeginPlay)
-		AHISCharacter* HISCharacter = Cast<AHISCharacter>(PlayersData[i].GetController()->GetPawn());
+		AHISCharacter* HISCharacter = Cast<AHISCharacter>(HISController->GetPawn());
 		HISCharacter->bDisableInput = true;
 		HideClone(i);
 		PlayersData[i].bIsHidden = true;
+		if (bNoRespawnTime)
+			HISController->ClientUpdateHUDTimerLabel(ETimerLabelState::SEEK);
+		else
+			HISController->ClientUpdateHUDTimerLabel(ETimerLabelState::WAIT);
 	}
 
 
@@ -160,9 +167,12 @@ void AHISGameMode::JointSeekTimerFinished()
 {
 	for (int i = 0; i < PlayersData.Num(); ++i)
 	{
+		AHISPlayerController* HISController = PlayersData[i].GetController();
+		AHISCharacter* HISCharacter = Cast<AHISCharacter>(HISController->GetPawn());
 		// ENABLE INPUT
-		AHISCharacter* HISCharacter = Cast<AHISCharacter>(PlayersData[i].GetController()->GetPawn());
 		HISCharacter->bDisableInput = false;
+		if (bNoRespawnTime == false)
+			HISController->ClientUpdateHUDTimerLabel(ETimerLabelState::SEEK);
 	}
 
 	bIsCountingDownFirstSeek = false;
@@ -181,9 +191,11 @@ void AHISGameMode::JointSeekTimerFinished()
 void AHISGameMode::IndividualHiderRespawnWaitFinished()
 {
 	int PlayerId = GetPlayerIdByRespawnState(ERespawnState::RespawnHiderWait);
-	AHISCharacter* HISCharacter = Cast<AHISCharacter>(PlayersData[PlayerId].GetController()->GetPawn());
+	AHISPlayerController* HISController = PlayersData[PlayerId].GetController();
+	AHISCharacter* HISCharacter = Cast<AHISCharacter>(HISController->GetPawn());
 	HISCharacter->bDisableInput = false;
 	FTimerHandle* WaitTimer = PlayersData[PlayerId].GetWaitTimer();
+	HISController->ClientUpdateHUDTimerLabel(ETimerLabelState::HIDE);
 	
 	PlayersData[PlayerId].RespawnState = ERespawnState::Hider;
 
@@ -197,10 +209,12 @@ void AHISGameMode::IndividualHideTimerFinished()
 {
 	// DISABLE INPUT -- Not required? Since immediately spawning a seeker (with input set to disabled from BeginPlay)
 	int PlayerId = GetPlayerIdByRespawnState(ERespawnState::Hider);
-	AHISCharacter* HISCharacter = Cast<AHISCharacter>(PlayersData[PlayerId].GetController()->GetPawn());
+	AHISPlayerController* HISController = PlayersData[PlayerId].GetController();
+	AHISCharacter* HISCharacter = Cast<AHISCharacter>(HISController->GetPawn());
 	HISCharacter->bDisableInput = true;
 	HideClone(PlayerId);
 	FTimerHandle* WaitTimer = PlayersData[PlayerId].GetWaitTimer();
+	HISController->ClientUpdateHUDTimerLabel(ETimerLabelState::WAIT);
 
 	PlayersData[PlayerId].RespawnState = ERespawnState::RespawnSeekerWait;
 
@@ -282,10 +296,15 @@ void AHISGameMode::SetCloneHidingLocationPreGame()
 		for (int i = 0; i < PlayersData.Num(); ++i)
 		{
 			// DISABLE INPUT -- Not required? Since immediately spawning a seeker (with input set to disabled from BeginPlay)
-			AHISCharacter* HISCharacter = Cast<AHISCharacter>(PlayersData[i].GetController()->GetPawn());
+			AHISPlayerController* HISController = PlayersData[i].GetController();
+			AHISCharacter* HISCharacter = Cast<AHISCharacter>(HISController->GetPawn());
 			HISCharacter->bDisableInput = true;
 			HideClone(i);
 			PlayersData[i].bIsHidden = true;
+			if (bNoRespawnTime)
+				HISController->ClientUpdateHUDTimerLabel(ETimerLabelState::SEEK);
+			else
+				HISController->ClientUpdateHUDTimerLabel(ETimerLabelState::WAIT);
 		}
 
 		bIsCountingDownFirstSeek = true;
@@ -304,9 +323,12 @@ void AHISGameMode::SetCloneHidingLocationIndividual(int PlayerId)
 	PlayersData[PlayerId].RespawnState = ERespawnState::RespawnSeekerWait;
 
 	// DISABLE INPUT -- Not required? Since immediately spawning a seeker (with input set to disabled from BeginPlay)
-	AHISCharacter* HISCharacter = Cast<AHISCharacter>(PlayersData[PlayerId].GetController()->GetPawn());
+	AHISPlayerController* HISController = PlayersData[PlayerId].GetController();
+	AHISCharacter* HISCharacter = Cast<AHISCharacter>(HISController->GetPawn());
 	HISCharacter->bDisableInput = true;
 	HideClone(PlayerId);
+	if (bNoRespawnTime == false)														// REFACTOR INTO THE BELOW -- DUH
+		HISController->ClientUpdateHUDTimerLabel(ETimerLabelState::WAIT);
 
 	if (bNoRespawnTime)
 		IndividualSeekerRespawnWaitFinished();
@@ -477,6 +499,8 @@ void AHISGameMode::RequestRespawn()
 	ACharacter* Character = FoundPlayerController->GetCharacter();								// Not currently doing anything???
 	FoundPlayerController->Possess(Hider);
 	Character->Destroy();
+
+	//FoundPlayerController->ClientUpdateHUDTimerLabel(ETimerLabelState::WAIT);					// [IMPORTANT] Moved to child game mode!
 
 	// [TODO] After countdown, resume control
 	

@@ -88,6 +88,24 @@ void AHISPlayerController::SetHUDScore(float Score)
 
 
 #pragma region Client RPC
+void AHISPlayerController::ClientUpdateHUDTimerLabel_Implementation(ETimerLabelState TimerState)
+{
+	if (HISHUD)
+	{
+		if (HISHUD->CharacterOverlay)
+		{
+			// [TODO] HACK!!!!! This is a proof of concept ONLY!!!
+			FName TimerStateName = UEnum::GetValueAsName<ETimerLabelState>(TimerState);
+			FString LeftString = "";
+			FString RightString = "";
+			TimerStateName.ToString().Split("::", &LeftString, &RightString);
+			FString TimerLabel = RightString + ":";
+
+			HISHUD->CharacterOverlay->UpdateTimerLabel(TimerLabel);
+		}
+	}
+}
+
 void AHISPlayerController::ClientUpdateHUDTimer_Implementation(int Seconds)
 {
 	if (HISHUD)

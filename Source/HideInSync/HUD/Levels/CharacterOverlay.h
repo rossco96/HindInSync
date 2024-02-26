@@ -14,6 +14,7 @@ class HIDEINSYNC_API UCharacterOverlay : public UUserWidget
 {
 	GENERATED_BODY()
 public:
+	void UpdateTimerLabel(FString Label);
 	void UpdateTimer(int Seconds);
 	
 	void SetFoundTextVisible(bool bIsVisible);
@@ -25,6 +26,9 @@ public:
 	class UTextBlock* ScoreAmountText;
 
 private:
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* GameTimerLabel;
+
 	// [TODO] Move to public as well! Implement same way as ScoreText
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* GameTimer;

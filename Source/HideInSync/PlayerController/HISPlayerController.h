@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "HideInSync/Gameplay/GameplayEnums.h"
 #include "HISPlayerController.generated.h"
 
 /**
@@ -33,6 +34,9 @@ public:
 
 	void SetHUDScore(float Score);
 
+	UFUNCTION(Client, Reliable)
+	void ClientUpdateHUDTimerLabel(ETimerLabelState Label);
+	
 	UFUNCTION(Client, Reliable)
 	void ClientUpdateHUDTimer(int Seconds);
 
