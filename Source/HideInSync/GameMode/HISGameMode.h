@@ -35,6 +35,9 @@ protected:
 	// --> Currently used in children (HISGameMode_FK) and NOT the base
 	const float TEST_RespawnDelay = 3.0f;
 
+	UFUNCTION(BlueprintCallable)
+	void SetTimer(ERespawnState RespawnState, int Time, bool bCountDown, bool bMovementDisabled);
+
 private:
 	// [TODO] Think about how we're getting the cosmetics of each player to then dress the clone appropriately
 	UPROPERTY(EditAnywhere)
@@ -73,18 +76,17 @@ private:
 	//	o Then if anyone drops after loading into the level
 	const int TEST_NumberOfPlayers = 3;
 
-	// [TODO] Hack, not ideal, 'max' below returns a negative number??
-	//		std::numeric_limits<float>::max()
-	// (below is ~317 years, for anyone interested)
-	const float MaxGameTime = 9999999999.9f;
+	const float MaxGameTime = INT32_MAX;
 
-	const float GameStartWaitTime = 5.0f;				// Used for both game start ONLY
+	const float GameStartWaitTime = 5.0f;				// Used for game start ONLY
 
 	//const float TEST_HideTimeLimit = 8.0f;			// [TODO] DO NOT DO THIS! Want it customisable! DELETE!
 	//const float RespawnTimeLimit = 3.0f;				// Consider including this (i.e. allow for a different starting hide time limit as to the one mid-game)
 
 	int JointWaitTimeRemaining = 0;
 	int CurrentGameTime = 0;
+
+	int CurrentRespawnOrderId = 0;
 
 	void LevelLoadCountdownFinished();
 	void JointHideTimerFinished();

@@ -32,6 +32,9 @@ public:
 	bool bHidingPlaceSet = false;
 	bool bIsHidden = false;
 
+	// RespawnOrderID must start at -1 as want the lowest value, but will also need to check if >= 0
+	int RespawnOrderId = -1;
+
 private:
 	AHISPlayerController* HISPlayerController;
 	FTimerHandle WaitTimer;

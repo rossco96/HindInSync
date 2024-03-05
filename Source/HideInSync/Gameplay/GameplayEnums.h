@@ -72,6 +72,8 @@ enum class ERespawnWait : uint8
 
 #pragma region STATES
 // RespawnState Enum below: Need to keep track of which stage of respawn each player is moving onto
+// Only relevant for individual timers, no need during e.g. pre-game where all waiting and hiding at the same time.
+// [NOTE][Q] Different game modes will require a different combination of the below?
 UENUM()
 enum class ERespawnState : uint8
 {
@@ -79,6 +81,7 @@ enum class ERespawnState : uint8
 	RespawnHiderWait,								// [TODO][IMPORTANT] Get actual people testing this for fun aspect! May want to not have any wait at all between hiding and seeking respawning
 	Hider,
 	RespawnSeekerWait,								// [TODO][IMPORTANT] (see above)
+	Spectate,										// e.g. NOT used in game mode Finders Keepers
 	NONE
 };
 
@@ -88,7 +91,8 @@ enum class ETimerLabelState : uint8
 {
 	WAIT,
 	HIDE,
-	SEEK
+	SEEK,
+	VIEW											// Used when spectating (but is a four letter word which would fit nicely on the screen)
 };
 #pragma endregion
 

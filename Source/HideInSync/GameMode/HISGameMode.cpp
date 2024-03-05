@@ -106,6 +106,13 @@ void AHISGameMode::PostLogin(APlayerController* NewPlayer)
 #pragma endregion
 
 
+void AHISGameMode::SetTimer(ERespawnState RespawnState, int Time, bool bCountDown, bool bMovementDisabled)
+{
+	// TEMP HERE
+	// Wanting to use in blueprints
+}
+
+
 #pragma region (OnTimersComplete -- pregame)
 // [TODO][IMPORTANT] Want to avoid doing the below!
 // Want everyone to be loaded... I guess still wait for a couple of seconds,
@@ -214,7 +221,9 @@ void AHISGameMode::IndividualHideTimerFinished()
 	HISCharacter->bDisableInput = true;
 	HideClone(PlayerId);
 	FTimerHandle* WaitTimer = PlayersData[PlayerId].GetWaitTimer();
-	HISController->ClientUpdateHUDTimerLabel(ETimerLabelState::WAIT);
+
+	if (bNoRespawnTime == false)
+		HISController->ClientUpdateHUDTimerLabel(ETimerLabelState::WAIT);
 
 	PlayersData[PlayerId].RespawnState = ERespawnState::RespawnSeekerWait;
 
@@ -227,11 +236,12 @@ void AHISGameMode::IndividualHideTimerFinished()
 void AHISGameMode::IndividualSeekerRespawnWaitFinished()
 {
 	int PlayerId = GetPlayerIdByRespawnState(ERespawnState::RespawnSeekerWait);
-	AHISPlayerController* PlayerController = PlayersData[PlayerId].GetController();
-	AHISCharacter* HISCharacter = Cast<AHISCharacter>(PlayerController->GetPawn());
+	AHISPlayerController* HISController = PlayersData[PlayerId].GetController();
+	AHISCharacter* HISCharacter = Cast<AHISCharacter>(HISController->GetPawn());
 	HISCharacter->bDisableInput = false;
 	PlayersData[PlayerId].RespawnState = ERespawnState::NONE;
 	PlayersData[PlayerId].bIsHidden = true;
+	HISController->ClientUpdateHUDTimerLabel(ETimerLabelState::SEEK);
 }
 #pragma endregion
 
@@ -240,6 +250,113 @@ void AHISGameMode::IndividualSeekerRespawnWaitFinished()
 void AHISGameMode::SetSpawnLocation(int PlayerId, FVector Location, FRotator Rotation)
 {
 	PlayersData[PlayerId].SetSpawnPosition(Location, Rotation);
+}
+
+
+// [TODO] Save casting - change AHISPlayerController* to AController*
+// [TODO] This is now incomplete! Previous signature was not passing 'NextCharacter'
+//void AHISGameMode::RequestRespawn(class AHISCharacter* CurrentCharacter, class AHISCharacter* NextCharacter, class AHISPlayerController* HISPlayerController)
+//void AHISGameMode::RequestRespawn(int FoundPlayerId)
+void AHISGameMode::RequestRespawn()
+{
+	// [TODO][IMPORTANT]
+	// 
+	// Should have played the dissolve animation by now
+	// Would then disable collision at the end?
+	// 
+	// That, or we could have separate 'RequestRespawnStart' and 'End' functions, where:
+	//	- START
+	//		o HIDER		Disables input/animation
+	//					Plays freeze animation
+	//					Destroys Hider character
+	//					Immediately spawns Seeker
+	//					If at match beginning, has player view some kind of environment camera while waiting
+	//					Otherwise, or if time run out and force hide, player views Seeker
+	//					STARTS 3s COUNTDOWN
+	//					(enable input)
+	// 
+	//		o SEEKER	Disables input/animation
+	//					Plays disolve animation
+	//					Destroys Seeker character
+	//					Immediately spawns Hider (but is frozen - greyscale the camera?) and camera is focused on that
+	//					STARTS 3s COUNTDOWN
+	//					(enable input)
+	// 
+	// ... Typing this out, I'm wondering if 'start' and 'end' are really needed? Below is incomplete if so.
+	// 
+	//	- END
+	//		o HIDER		Enables input. 
+	//					Spawns Seeker
+	// 
+	//		o SEEKER	Enables input.
+
+	int PlayerId = GetPlayerIdByRespawnState(ERespawnState::Found);
+
+	// Implement the below properly! Will need to add to the score, both for Hider and Seeker
+	// (will need to create either second array or a list of int pairs)
+
+	PlayersData[PlayerId].ResetSpawn();														// [TODO] Combine and rename these two?
+
+	TArray<AActor*> PlayerStarts;
+	UGameplayStatics::GetAllActorsOfClass(this, APlayerStart::StaticClass(), PlayerStarts);
+	int32 Index = FMath::RandRange(0, PlayerStarts.Num() - 1);
+	FVector SpawnLocation = PlayerStarts[Index]->GetTransform().GetLocation();
+	FRotator SpawnRotation = PlayerStarts[Index]->GetTransform().GetRotation().Rotator();
+
+	AActor* SpawnedHider = GetWorld()->SpawnActor(HiderClass, &SpawnLocation, &SpawnRotation);
+	AHISCharacterHider* Hider = Cast<AHISCharacterHider>(SpawnedHider);
+
+	AHISPlayerController* FoundPlayerController = PlayersData[PlayerId].GetController();
+	FoundPlayerController->ClientSetFoundTextVisible(false);
+	ACharacter* Character = FoundPlayerController->GetCharacter();								// Not currently doing anything???
+	FoundPlayerController->Possess(Hider);
+	Character->Destroy();
+
+	//FoundPlayerController->ClientUpdateHUDTimerLabel(ETimerLabelState::WAIT);					// [IMPORTANT] Moved to child game mode!
+
+	// [TODO] After countdown, resume control
+
+	// (prev note, before setting from false to true)
+	// Below temp here only for testing -- will still need to have timer to resume control, and set off new timer, etc.
+	Hider->bDisableInput = true;
+
+	FTimerHandle* PlayerTimer = PlayersData[PlayerId].GetWaitTimer();
+	PlayersData[PlayerId].RespawnState = ERespawnState::RespawnHiderWait;
+
+	if (bNoRespawnTime)
+		IndividualHiderRespawnWaitFinished();
+	else
+		GetWorldTimerManager().SetTimer(*PlayerTimer, this, &AHISGameMode::IndividualHiderRespawnWaitFinished, RespawnWaitTime);	// Previously WaitCountdown
+
+	// [TODO][IMPORTANT]
+	// Do not implement free-cam while waiting
+	// (at least in the beginning of this development)
+	// because too complex to create separate set of controls,
+	// and have to switch control of different actors and spawning (etc.)
+	// ...
+	// Would be a nice addition, though!
+	// If do eventually implement, will have to ensure we can only see Seekers
+}
+
+
+int AHISGameMode::GetPlayerIdByRespawnState(ERespawnState RespawnState)
+{
+	int Index = -1;
+	int LowestRespawnOrderId = INT32_MAX;
+	for (int i = 0; i < PlayersData.Num(); ++i)
+	{
+		if (PlayersData[i].RespawnOrderId < 0) continue;
+		if (PlayersData[i].RespawnState == RespawnState && PlayersData[i].RespawnOrderId < LowestRespawnOrderId)
+		{
+			Index = i;
+			LowestRespawnOrderId = PlayersData[i].RespawnOrderId;
+		}
+	}
+	if (Index == -1)
+	{
+		UE_LOG(LogActor, Warning, TEXT("[AHISGameMode::GetControllerByRespawnState] Error -- Should never be here -- returning -1."));
+	}
+	return Index;
 }
 #pragma endregion
 
@@ -406,6 +523,9 @@ void AHISGameMode::PlayerFound(class AHISClone* FoundClone, class AHISPlayerCont
 	PlayersData[FoundId].RespawnState = ERespawnState::Found;
 	PlayersData[FoundId].bHidingPlaceSet = false;
 	PlayersData[FoundId].bIsHidden = false;
+	PlayersData[FoundId].RespawnOrderId = CurrentRespawnOrderId;
+
+	CurrentRespawnOrderId++;
 
 	AHISPlayerState* SeekerPlayerState = (SeekerController) ? Cast<AHISPlayerState>(SeekerController->PlayerState) : nullptr;
 	// [TODO][IMPORTANT] Must pass HiderController in this method!!!
@@ -436,115 +556,6 @@ void AHISGameMode::PlayerFound(class AHISClone* FoundClone, class AHISPlayerCont
 	HiderScoreSlot += (SeekerId > FoundId) ? SeekerId - 1 : SeekerId;
 	UE_LOG(LogActor, Warning, TEXT("[HISGameMode::PlayerFound] HiderScoreSlot %d"), HiderScoreSlot);
 	PlayersData[FoundId].GetController()->ClientUpdateHUDScores(HiderScoreSlot, GameScore[SeekerId][FoundId]);	// [TODO] This is hacky to access the controller like this... Pass it to the function!
-}
-#pragma endregion
-
-
-#pragma region RESPAWNING
-// [TODO] Save casting - change AHISPlayerController* to AController*
-// [TODO] This is now incomplete! Previous signature was not passing 'NextCharacter'
-//void AHISGameMode::RequestRespawn(class AHISCharacter* CurrentCharacter, class AHISCharacter* NextCharacter, class AHISPlayerController* HISPlayerController)
-//void AHISGameMode::RequestRespawn(int FoundPlayerId)
-void AHISGameMode::RequestRespawn()
-{
-	// [TODO][IMPORTANT]
-	// 
-	// Should have played the dissolve animation by now
-	// Would then disable collision at the end?
-	// 
-	// That, or we could have separate 'RequestRespawnStart' and 'End' functions, where:
-	//	- START
-	//		o HIDER		Disables input/animation
-	//					Plays freeze animation
-	//					Destroys Hider character
-	//					Immediately spawns Seeker
-	//					If at match beginning, has player view some kind of environment camera while waiting
-	//					Otherwise, or if time run out and force hide, player views Seeker
-	//					STARTS 3s COUNTDOWN
-	//					(enable input)
-	// 
-	//		o SEEKER	Disables input/animation
-	//					Plays disolve animation
-	//					Destroys Seeker character
-	//					Immediately spawns Hider (but is frozen - greyscale the camera?) and camera is focused on that
-	//					STARTS 3s COUNTDOWN
-	//					(enable input)
-	// 
-	// ... Typing this out, I'm wondering if 'start' and 'end' are really needed? Below is incomplete if so.
-	// 
-	//	- END
-	//		o HIDER		Enables input. 
-	//					Spawns Seeker
-	// 
-	//		o SEEKER	Enables input.
-
-	int PlayerId = GetPlayerIdByRespawnState(ERespawnState::Found);
-
-	// Implement the below properly! Will need to add to the score, both for Hider and Seeker
-	// (will need to create either second array or a list of int pairs)
-	
-	PlayersData[PlayerId].ResetSpawn();														// [TODO] Combine and rename these two?
-
-	TArray<AActor*> PlayerStarts;
-	UGameplayStatics::GetAllActorsOfClass(this, APlayerStart::StaticClass(), PlayerStarts);
-	int32 Index = FMath::RandRange(0, PlayerStarts.Num() - 1);
-	FVector SpawnLocation = PlayerStarts[Index]->GetTransform().GetLocation();
-	FRotator SpawnRotation = PlayerStarts[Index]->GetTransform().GetRotation().Rotator();
-
-	AActor* SpawnedHider = GetWorld()->SpawnActor(HiderClass, &SpawnLocation, &SpawnRotation);
-	AHISCharacterHider* Hider = Cast<AHISCharacterHider>(SpawnedHider);
-
-	AHISPlayerController* FoundPlayerController = PlayersData[PlayerId].GetController();
-	FoundPlayerController->ClientSetFoundTextVisible(false);
-	ACharacter* Character = FoundPlayerController->GetCharacter();								// Not currently doing anything???
-	FoundPlayerController->Possess(Hider);
-	Character->Destroy();
-
-	//FoundPlayerController->ClientUpdateHUDTimerLabel(ETimerLabelState::WAIT);					// [IMPORTANT] Moved to child game mode!
-
-	// [TODO] After countdown, resume control
-	
-	// (prev note, before setting from false to true)
-	// Below temp here only for testing -- will still need to have timer to resume control, and set off new timer, etc.
-	Hider->bDisableInput = true;
-
-	FTimerHandle* PlayerTimer = PlayersData[PlayerId].GetWaitTimer();
-	PlayersData[PlayerId].RespawnState = ERespawnState::RespawnHiderWait;
-
-	if (bNoRespawnTime)
-		IndividualHiderRespawnWaitFinished();
-	else
-		GetWorldTimerManager().SetTimer(*PlayerTimer, this, &AHISGameMode::IndividualHiderRespawnWaitFinished, RespawnWaitTime);	// Previously WaitCountdown
-
-	// [TODO][IMPORTANT]
-	// Do not implement free-cam while waiting
-	// (at least in the beginning of this development)
-	// because too complex to create separate set of controls,
-	// and have to switch control of different actors and spawning (etc.)
-	// ...
-	// Would be a nice addition, though!
-	// If do eventually implement, will have to ensure we can only see Seekers
-}
-
-
-// [TODO][IMPORTANT]
-// This function is not safe!
-// Can have two or more players in e.g. Hider state
-// (they have, while testing, 15s in that state. This would be even more in-game!)
-// Keep track of PlayerRespawnIds (TArray) in this script,
-// and have RespawnOrder number in PlayerGameData
-// Then, when one Id gets removed, can reduce all existing RespawnOrder numbers by one
-int AHISGameMode::GetPlayerIdByRespawnState(ERespawnState RespawnState)
-{
-	for (int i = 0; i < PlayersData.Num(); ++i)
-	{
-		if (PlayersData[i].RespawnState == RespawnState)
-		{
-			return i;
-		}
-	}
-	UE_LOG(LogActor, Warning, TEXT("[AHISGameMode::GetControllerByRespawnState] Error -- Should never be here -- return -1."));
-	return -1;
 }
 #pragma endregion
 
