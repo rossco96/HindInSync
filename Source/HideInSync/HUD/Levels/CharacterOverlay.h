@@ -25,16 +25,15 @@ public:
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* ScoreAmountText;
 
-private:
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* GameTimerLabel;
-
-	// [TODO] Move to public as well! Implement same way as ScoreText
 	UPROPERTY(meta = (BindWidget))
 	UTextBlock* GameTimer;
 
+private:
 	UPROPERTY(meta = (BindWidget))
-	UTextBlock* FoundText;
+	UTextBlock* GameTimerLabel;							// [TODO] Make public, as ones above
+
+	UPROPERTY(meta = (BindWidget))
+	UTextBlock* FoundText;								// [TODO] ... Also make public?
 
 	UPROPERTY(meta = (BindWidget))
 	class UUniformGridPanel* ScorePanel;				// [TODO] May need to make public for access by HISHUD?

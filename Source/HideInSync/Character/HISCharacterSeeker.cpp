@@ -43,13 +43,6 @@ void AHISCharacterSeeker::FindClone()
 {
 	if (FoundClone == nullptr) return;
 
-	// [TODO][NEW]
-	// Iterate from Num clones - 1 to zero
-	// calling HISGameMode->PlayerFound on
-	// any clones for which the corresponding
-	// ClonesInRange is true...
-	// ... and then remove both from the lists!
-
 	if (HasAuthority())
 	{
 		AHISGameMode* HISGameMode = GetWorld()->GetAuthGameMode<AHISGameMode>();
@@ -82,7 +75,8 @@ void AHISCharacterSeeker::OnRep_FoundClone(AHISClone* LastClone)
 		return;
 	}
 
-	if (FoundClone && FoundClone->GetPlayerId() == HISPlayerController->GetPlayerId()) return;
+	//if (FoundClone && FoundClone->GetPlayerId() == HISPlayerController->GetPlayerId()) return;
+	if (FoundClone && FoundClone->HISPlayerController == HISPlayerController) return;
 	
 	if (FoundClone)
 	{
@@ -110,7 +104,8 @@ void AHISCharacterSeeker::SetCloneInRange(AHISClone* Clone, bool bIsInRange)
 		return;
 	}
 
-	if (Clone && Clone->GetPlayerId() == HISPlayerController->GetPlayerId()) return;
+	//if (Clone && Clone->GetPlayerId() == HISPlayerController->GetPlayerId()) return;
+	if (Clone && Clone->HISPlayerController == HISPlayerController) return;
 
 	if (bIsInRange)
 	{
@@ -128,23 +123,6 @@ void AHISCharacterSeeker::SetCloneInRange(AHISClone* Clone, bool bIsInRange)
 			bFoundCloneVisible = false;
 		}
 	}
-
-	// [TODO][NEW] continue with this pls
-	//ClonesInRange.Add(Clone);
-	//ClonesFindableStatus2.Add(false);				// Do I add false and then update in CheckClonesInRange()? Or just do a check here as well? Feels redundant to do the latter, for the sake of one frame...
-
-	// [ERROR]									ClonesInRange.Add(Clone)
-	//	o Client finding Client					< works
-	//	o Client finding Server					< works
-	//	o Server finding Client					< does not work!
-	//	o Server finding Client during debug	< works?
-	// Possible solutions:
-	//	- Check HasAuthority, and if so call ClientRPC (is that what needs to happen? ClientRPC wouldn't even work anyway for owning client, right???)
-	//	- Check how TArray replication works (see video currently open)
-	//	- Do NOT have array of clones. Have array of bools only, corresponding to ID of all other players,
-	//		and update True-False value based on 3 conditions... Distance, Viewport, Obstructions.
-	//		(only negative, will need to constantly check the bools)(to make it easier, include own ID as well but no need to check it)
-	//		TMap<int, TArray<bool>[3]> ???
 }
 
 
@@ -174,7 +152,7 @@ void AHISCharacterSeeker::RaycastViewport()
 		GetWorld(),
 		StartPos,
 		EndPos,
-		50.0f,
+		50.0f,																								// [TODO] This is currently arbitrary!
 		TraceObjectTypes,
 		false,
 		{ this },
@@ -191,7 +169,8 @@ void AHISCharacterSeeker::RaycastViewport()
 		AHISClone* Clone = Cast<AHISClone>(HitResult.GetActor());
 		if (Clone)
 		{
-			if (Clone->GetPlayerId() == HISPlayerController->GetPlayerId())
+			//if (Clone->GetPlayerId() == HISPlayerController->GetPlayerId())
+			if (Clone->HISPlayerController == HISPlayerController)
 			{
 				return;
 			}

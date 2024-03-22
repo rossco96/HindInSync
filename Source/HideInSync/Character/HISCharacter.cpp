@@ -127,13 +127,11 @@ void AHISCharacter::PossessedBy(AController* NewController)
 	// This is only called on the server - no need to check HasAuthority()
 
 	HISPlayerController = Cast<AHISPlayerController>(NewController);
-	ClientSetPlayerController(HISPlayerController);													// THIS FEELS WRONG? But not sure why else I'd be getting the error...
-	UE_LOG(LogActor, Warning, TEXT("[AHISCharacter::PossessedBy] PossessedBy -- parent // We must be the Server in this function?"));
+	ClientSetPlayerController(HISPlayerController);
 }
 
 
 void AHISCharacter::ClientSetPlayerController_Implementation(AHISPlayerController* NewController)
 {
 	HISPlayerController = NewController;
-	UE_LOG(LogActor, Warning, TEXT("[AHISCharacter::ClientSetPlayerController] ClientRPC."));
 }

@@ -7,7 +7,7 @@
 // GameMode Enum below: Names of all the possible game modes
 // (as called by their class NAMES, e.g. "FK" rather than "FindersKeepers")
 UENUM(BlueprintType)
-enum class EGameMode : uint8
+enum class EHISGameMode : uint8
 {
 	AON					UMETA(DisplayName = "All or Nothing"),
 	FK					UMETA(DisplayName = "Finders Keepers"),

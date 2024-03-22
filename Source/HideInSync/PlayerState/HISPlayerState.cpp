@@ -15,7 +15,7 @@ void AHISPlayerState::AddToScore(float ScoreAmount)
 		HISPlayerController = (HISPlayerController == nullptr) ? Cast<AHISPlayerController>(HISCharacter->Controller) : HISPlayerController;
 		if (HISPlayerController)
 		{
-			HISPlayerController->SetHUDScore(Score);
+			//HISPlayerController->SetHUDScore(Score);
 		}
 	}
 }
@@ -32,7 +32,7 @@ void AHISPlayerState::OnRep_Score()
 		HISPlayerController = (HISPlayerController == nullptr) ? Cast<AHISPlayerController>(HISCharacter->Controller) : HISPlayerController;
 		if (HISPlayerController)
 		{
-			HISPlayerController->SetHUDScore(Score);
+			//HISPlayerController->SetHUDScore(Score);
 		}
 	}
 }

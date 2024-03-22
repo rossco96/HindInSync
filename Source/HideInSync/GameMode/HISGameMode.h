@@ -17,17 +17,27 @@ class HIDEINSYNC_API AHISGameMode : public AGameMode
 	GENERATED_BODY()
 	
 public:
+	AHISGameMode();
 	virtual void Tick(float DeltaSeconds) override;
 
 	// PostLogin is the first place where it's safe to access the player that just joined the game
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 
+	void CheckAllClonesHidden();
+	void SpawnHiddenClone(AHISPlayerController* HISPlayerController);
+
+	void SetSpawnLocation(int PlayerId, FVector SpawnLocation, FRotator SpawnRotation);
+
+	// [TODO][Important] May need to reconsider signature of this function?
+	virtual void PlayerFound(class AHISClone* FoundClone, class AHISPlayerController* SeekerController);
+
+	UPROPERTY(EditDefaultsOnly)
+	float GameStartWaitTime = 10.0f;				// Used for game start ONLY
+	
+	float LevelStartingTime = 0.0f;
+
 protected:
 	virtual void BeginPlay() override;
-
-	// [TODO]
-	// WHY IS IT VIRTUAL?
-	virtual void RequestRespawn();
 	
 	TMap<int, PlayerGameData> PlayersData;
 
@@ -35,8 +45,7 @@ protected:
 	// --> Currently used in children (HISGameMode_FK) and NOT the base
 	const float TEST_RespawnDelay = 3.0f;
 
-	UFUNCTION(BlueprintCallable)
-	void SetTimer(ERespawnState RespawnState, int Time, bool bCountDown, bool bMovementDisabled);
+	virtual void OnMatchStateSet() override;
 
 private:
 	// [TODO] Think about how we're getting the cosmetics of each player to then dress the clone appropriately
@@ -61,10 +70,6 @@ private:
 	bool bIsCountingDownFirstSeek = false;				// .. And adding this feels even worse
 	bool bHasGameStarted = false;
 
-	void UpdateJointWaitTimer();
-	void UpdatePlayerHUDCountdown(int PlayerId);
-	void UpdatePlayerHUDGameTimer(int PlayerId);
-	void CheckGameTimer();
 	bool bIsGameTimeEndless = false;
 	bool bIsHideTimeEndless = false;
 	bool bNoRespawnTime = true;
@@ -78,37 +83,16 @@ private:
 
 	const float MaxGameTime = INT32_MAX;
 
-	const float GameStartWaitTime = 5.0f;				// Used for game start ONLY
-
-	//const float TEST_HideTimeLimit = 8.0f;			// [TODO] DO NOT DO THIS! Want it customisable! DELETE!
-	//const float RespawnTimeLimit = 3.0f;				// Consider including this (i.e. allow for a different starting hide time limit as to the one mid-game)
+	float CurrentGameStartCountdown = 0.0f;
 
 	int JointWaitTimeRemaining = 0;
 	int CurrentGameTime = 0;
 
 	int CurrentRespawnOrderId = 0;
 
-	void LevelLoadCountdownFinished();
-	void JointHideTimerFinished();
-	void JointSeekTimerFinished();
-	void IndividualHiderRespawnWaitFinished();
-	void IndividualHideTimerFinished();
-	void IndividualSeekerRespawnWaitFinished();
-
 	int GetPlayerIdByRespawnState(ERespawnState RespawnState);
 
-	void SetCloneHidingLocationPreGame();
-	void SetCloneHidingLocationIndividual(int PlayerId);
-	void HideClone(int PlayerId);
-
 	//void RestartPlayerAtPlayerStart();				// Consider different types of where and how to spawn the player(s)
-
-public:
-	void SetSpawnLocation(int PlayerId, FVector SpawnLocation, FRotator SpawnRotation);
-	void SetCloneHidingLocation(class AHISPlayerController* HiderController, FVector Location, FRotator Rotation);
-
-	// [TODO][Important] May need to reconsider signature of this function?
-	virtual void PlayerFound(class AHISClone* FoundClone, class AHISPlayerController* SeekerController);
 };
 
 

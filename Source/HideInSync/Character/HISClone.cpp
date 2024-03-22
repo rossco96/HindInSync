@@ -55,13 +55,6 @@ void AHISClone::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 }
-
-
-void AHISClone::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(AHISClone, PlayerId);
-}
 #pragma endregion
 
 
@@ -103,7 +96,7 @@ void AHISClone::FoundIgnore()
 	UE_LOG(LogActor, Warning, TEXT("[AHISClone::FoundIgnore][TODO] -- Do nothing, other than 'found' sound and visual effects to the linked Active Character ONLY."));
 }
 
-void AHISClone::FoundReset_Implementation()
+void AHISClone::FoundReset()
 {
 	//bIsFound = true;										// Do we need this?
 

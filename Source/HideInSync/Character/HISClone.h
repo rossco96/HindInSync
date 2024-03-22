@@ -14,15 +14,23 @@ public:
 	AHISClone();
 	virtual void Tick(float DeltaTime) override;
 
+	class AHISPlayerController* HISPlayerController;
+
+	//FORCEINLINE void SetPlayerId(int Id) { PlayerId = Id; }		// Ensure this is only used once, by the game mode, while setting up the level
+	//FORCEINLINE int GetPlayerId() { return PlayerId; }
+
+	FORCEINLINE bool IsFound() { return bIsFound; }				// We using this?
+
+	void ShowFoundWidget(bool bShowWidget);
+
+	void FoundIgnore();
+	void FoundReset();
+	void FoundSpectate();
+
 protected:
 	virtual void BeginPlay() override;
 
 private:
-	UPROPERTY(Replicated)
-	int PlayerId;
-
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
 	bool bIsFound = false;
 
 	UPROPERTY(EditAnywhere)
@@ -51,17 +59,4 @@ private:
 		UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex
 	);
-
-public:
-	FORCEINLINE void SetPlayerId(int Id) { PlayerId = Id; }		// Ensure this is only used once, by the game mode, while setting up the level
-	FORCEINLINE int GetPlayerId() { return PlayerId; }
-
-	FORCEINLINE bool IsFound() { return bIsFound; }				// We using this?
-
-	void ShowFoundWidget(bool bShowWidget);
-	
-	void FoundIgnore();
-	UFUNCTION(NetMulticast, Reliable)							// [TODO] Aren't they all like this? Also THINK! Do we need NetMulticast? Or Server, or something else?
-	void FoundReset();
-	void FoundSpectate();
 };

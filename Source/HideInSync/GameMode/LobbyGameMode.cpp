@@ -68,7 +68,8 @@ void ALobbyGameMode::StartGame(FString LevelPath, FString GameModePath)
 		// '?listen' option above specifies that it'll be open as a listen server for clients to connect to
 		
 		// [TODO][IMPORTANT] Proof of concept -- won't always want listen server?
-		FString FullPath = LevelPath + "?listen?game=" + GameModePath;
+		// [TODO][IMPORTANT] May also need "_C" at the end, though not fully sure why. But that seems to be what's showing up in the logs
+		FString FullPath = LevelPath + "?listen?game=" + GameModePath + "_C";
 
 		UE_LOG(LogActor, Warning, TEXT("[asdf] %s"), *FullPath);
 

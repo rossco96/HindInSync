@@ -27,13 +27,10 @@ public:
 	void SetHidePosition(FVector Location, FRotator Rotation);
 
 	ERespawnState RespawnState = ERespawnState::NONE;
-	bool bCheckRespawnState = false;									// [TODO] IMPLEMENT! Think this will be needed --> e.g. P2 is 10s out of 30s into the hiding state and then P3 enters the hiding state, so when iterating to find which player is in the hiding state will come up to P2 first (if not using this bool)
+	int RespawnOrderId = -1;
 	
 	bool bHidingPlaceSet = false;
 	bool bIsHidden = false;
-
-	// RespawnOrderID must start at -1 as want the lowest value, but will also need to check if >= 0
-	int RespawnOrderId = -1;
 
 private:
 	AHISPlayerController* HISPlayerController;

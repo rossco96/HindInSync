@@ -20,12 +20,20 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UUserWidget> CharacterOverlayClass;	// Does this need to be public?
+	void AddCharacterOverlay();
 
+	UPROPERTY()
 	class UCharacterOverlay* CharacterOverlay;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UUserWidget> AnnouncementWidgetClass;
+	void AddAnnouncementWidget();
+
+	UPROPERTY()
+	class UAnnouncementWidget* AnnouncementWidget;
 
 protected:
 	virtual void BeginPlay() override;
-	void AddCharacterOverlay();
 
 private:
 	UPROPERTY(EditAnywhere)
